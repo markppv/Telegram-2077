@@ -1695,13 +1695,13 @@ public class AndroidUtilities {
     }
 
     public static void checkForUpdates(Activity context) {
-        if (BuildVars.DEBUG_VERSION) {
+        if (BuildVars.USE_HOCKEY_APP) {
             UpdateManager.register(context, BuildVars.DEBUG_VERSION ? BuildVars.HOCKEY_APP_HASH_DEBUG : BuildVars.HOCKEY_APP_HASH);
         }
     }
 
     public static void unregisterUpdates() {
-        if (BuildVars.DEBUG_VERSION) {
+        if (BuildVars.USE_HOCKEY_APP) {
             UpdateManager.unregister();
         }
     }
