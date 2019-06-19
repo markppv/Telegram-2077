@@ -60,9 +60,14 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
     @Override
     public boolean onFragmentCreate() {
         fillLanguages();
-        LocaleController.getInstance().loadRemoteLanguages(currentAccount);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.suggestedLangpack);
         return super.onFragmentCreate();
+    }
+
+    @Override
+    protected void onBecomeFullyVisible() {
+        super.onBecomeFullyVisible();
+        LocaleController.getInstance().loadRemoteLanguages(currentAccount);
     }
 
     @Override
