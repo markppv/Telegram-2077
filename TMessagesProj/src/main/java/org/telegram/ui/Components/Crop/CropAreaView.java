@@ -13,12 +13,13 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.os.Build;
-import androidx.annotation.Keep;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
+
+import androidx.annotation.Keep;
 
 import org.telegram.messenger.AndroidUtilities;
 
@@ -49,6 +50,7 @@ public class CropAreaView extends View {
 
     private Control activeControl;
     private RectF actualRect = new RectF();
+    private RectF actualAnimRect = new RectF();
     private RectF tempRect = new RectF();
     private int previousX;
     private int previousY;
@@ -65,6 +67,7 @@ public class CropAreaView extends View {
 
     AccelerateDecelerateInterpolator interpolator = new AccelerateDecelerateInterpolator();
 
+    private float wheelTop;
     private float sidePadding;
     private float minWidth;
 
@@ -149,7 +152,7 @@ public class CropAreaView extends View {
         listener = l;
     }
 
-    public void setBitmap(Bitmap bitmap, boolean sideward, boolean fform) {
+    public void setBitmap(Bitmap bitmap, boolean sideward, boolean fform, boolean animated) {
         if (bitmap == null || bitmap.isRecycled()) {
             return;
         }
@@ -166,7 +169,13 @@ public class CropAreaView extends View {
             lockAspectRatio = 1.0f;
         }
 
-        setActualRect(aspectRatio);
+        if (animated) {
+            RectF rect = new RectF();
+            calculateRect(rect, aspectRatio);
+            fill(rect, null, true);
+        } else {
+            setActualRect(aspectRatio);
+        }
     }
 
     public void setFreeform(boolean fform) {
@@ -187,30 +196,36 @@ public class CropAreaView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (freeform) {
-            int lineThickness = AndroidUtilities.dp(2);
-            int handleSize = AndroidUtilities.dp(16);
-            int handleThickness = AndroidUtilities.dp(3);
+        final int viewWidth = getWidth();
+        final int viewHeight = getHeight();
 
-            int originX = (int) actualRect.left - lineThickness;
-            int originY = (int) actualRect.top - lineThickness;
-            int width = (int) (actualRect.right - actualRect.left) + lineThickness * 2;
-            int height = (int) (actualRect.bottom - actualRect.top) + lineThickness * 2;
+        float parentScale = ((ViewGroup) getParent()).getScaleX();
+        final float offscrenDimSize = Math.max(viewWidth, viewHeight) / parentScale;
+
+        if (freeform) {
+            float lineThickness = AndroidUtilities.dp(2f) / parentScale;
+            float handleSize = AndroidUtilities.dp(16f) / parentScale;
+            float handleThickness = AndroidUtilities.dp(3f) / parentScale;
+
+            float originX = actualRect.left - lineThickness;
+            float originY = actualRect.top - lineThickness;
+            float width = (actualRect.right - actualRect.left) + lineThickness * 2;
+            float height = (actualRect.bottom - actualRect.top) + lineThickness * 2;
 
             if (dimVisibile) {
-                canvas.drawRect(0, 0, getWidth(), originY + lineThickness, dimPaint);
-                canvas.drawRect(0, originY + lineThickness, originX + lineThickness, originY + height - lineThickness, dimPaint);
-                canvas.drawRect(originX + width - lineThickness, originY + lineThickness, getWidth(), originY + height - lineThickness, dimPaint);
-                canvas.drawRect(0, originY + height - lineThickness, getWidth(), getHeight(), dimPaint);
+                canvas.drawRect(-offscrenDimSize, -offscrenDimSize, viewWidth + offscrenDimSize, originY + lineThickness, dimPaint);
+                canvas.drawRect(-offscrenDimSize, originY + lineThickness , originX + lineThickness, originY + height - lineThickness, dimPaint);
+                canvas.drawRect(originX + width - lineThickness, originY + lineThickness, viewWidth + offscrenDimSize, originY + height - lineThickness, dimPaint);
+                canvas.drawRect(-offscrenDimSize, originY + height - lineThickness, viewWidth + offscrenDimSize, viewHeight + offscrenDimSize, dimPaint);
             }
 
             if (!frameVisible) {
                 return;
             }
 
-            int inset = handleThickness - lineThickness;
-            int gridWidth = width - handleThickness * 2;
-            int gridHeight = height - handleThickness * 2;
+            float inset = handleThickness - lineThickness;
+            float gridWidth = width - handleThickness * 2f;
+            float gridHeight = height - handleThickness * 2f;
 
             GridType type = gridType;
             if (type == GridType.NONE && gridProgress > 0)
@@ -274,10 +289,10 @@ public class CropAreaView extends View {
 
                 }
             }
-            canvas.drawRect(0, 0, getWidth(), (int) actualRect.top, dimPaint);
+            canvas.drawRect(0, 0, viewWidth, (int) actualRect.top, dimPaint);
             canvas.drawRect(0, (int) actualRect.top, (int) actualRect.left, (int) actualRect.bottom, dimPaint);
-            canvas.drawRect((int) actualRect.right, (int) actualRect.top, getWidth(), (int) actualRect.bottom, dimPaint);
-            canvas.drawRect(0, (int) actualRect.bottom, getWidth(), getHeight(), dimPaint);
+            canvas.drawRect((int) actualRect.right, (int) actualRect.top, viewWidth, (int) actualRect.bottom, dimPaint);
+            canvas.drawRect(0, (int) actualRect.bottom, viewWidth, viewHeight, dimPaint);
             canvas.drawBitmap(circleBitmap, (int) actualRect.left, (int) actualRect.top, null);
         }
     }
@@ -360,11 +375,13 @@ public class CropAreaView extends View {
                 animator = null;
             }
 
-            AnimatorSet set = new AnimatorSet();
-            animator = set;
-            set.setDuration(300);
+            actualAnimRect.set(targetRect);
 
-            Animator animators[] = new Animator[5];
+            AnimatorSet set = new AnimatorSet();
+            set.setDuration(300);
+            animator = set;
+
+            Animator animators[] = new Animator[scaleAnimator == null ? 4 : 5];
             animators[0] = ObjectAnimator.ofFloat(this, "cropLeft", targetRect.left);
             animators[0].setInterpolator(interpolator);
             animators[1] = ObjectAnimator.ofFloat(this, "cropTop", targetRect.top);
@@ -373,8 +390,11 @@ public class CropAreaView extends View {
             animators[2].setInterpolator(interpolator);
             animators[3] = ObjectAnimator.ofFloat(this, "cropBottom", targetRect.bottom);
             animators[3].setInterpolator(interpolator);
-            animators[4] = scaleAnimator;
-            animators[4].setInterpolator(interpolator);
+
+            if (scaleAnimator != null) {
+                animators[4] = scaleAnimator;
+                animators[4].setInterpolator(interpolator);
+            }
 
             set.playTogether(animators);
             set.addListener(new AnimatorListenerAdapter() {
@@ -457,6 +477,18 @@ public class CropAreaView extends View {
 
     public float getCropHeight() {
         return actualRect.bottom - actualRect.top;
+    }
+
+    public float getCropWidthAnimEndValue() {
+        if (animator != null) {
+            return actualAnimRect.right - actualAnimRect.left;
+        } else return getCropWidth();
+    }
+
+    public float getCropHeightAnimEndValue() {
+        if (animator != null) {
+            return actualAnimRect.bottom - actualAnimRect.top;
+        } else return getCropHeight();
     }
 
     public RectF getTargetRectToFill() {
@@ -666,13 +698,19 @@ public class CropAreaView extends View {
                     break;
             }
 
+
+            if (wheelTop > 0f && event.getRawY() >= wheelTop) {
+                tempRect.left = actualRect.left;
+                tempRect.right = actualRect.right;
+            }
+
             if (tempRect.left < sidePadding) {
                 if (lockAspectRatio > 0) {
                     tempRect.bottom = tempRect.top + (tempRect.right - sidePadding) / lockAspectRatio;
                 }
-                tempRect.left = sidePadding;
+                if (wheelTop == 0f) tempRect.left = sidePadding;
             } else if (tempRect.right > getWidth() - sidePadding) {
-                tempRect.right = getWidth() - sidePadding;
+                if (wheelTop == 0f) tempRect.right = getWidth() - sidePadding;
                 if (lockAspectRatio > 0) {
                     tempRect.bottom = tempRect.top + tempRect.width() / lockAspectRatio;
                 }
@@ -684,9 +722,9 @@ public class CropAreaView extends View {
                 if (lockAspectRatio > 0) {
                     tempRect.right = tempRect.left + (tempRect.bottom - topPadding) * lockAspectRatio;
                 }
-                tempRect.top = topPadding;
+                if (wheelTop == 0f) tempRect.top = topPadding;
             } else if (tempRect.bottom > getHeight() - finalBottomPadidng) {
-                tempRect.bottom = getHeight() - finalBottomPadidng;
+                if (wheelTop == 0f) tempRect.bottom = getHeight() - finalBottomPadidng;
                 if (lockAspectRatio > 0) {
                     tempRect.right = tempRect.left + tempRect.height() * lockAspectRatio;
                 }
@@ -743,5 +781,9 @@ public class CropAreaView extends View {
 
     public void getCropRect(RectF rect) {
         rect.set(actualRect);
+    }
+
+    public void setWheelTop(float customHeight) {
+        this.wheelTop = customHeight;
     }
 }

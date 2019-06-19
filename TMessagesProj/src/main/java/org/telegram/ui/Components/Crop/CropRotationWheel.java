@@ -21,6 +21,13 @@ import org.telegram.ui.Components.LayoutHelper;
 
 public class CropRotationWheel extends FrameLayout {
 
+    private int dp2p5 = AndroidUtilities.dp(2.5f);
+    private int dp22 = AndroidUtilities.dp(22);
+    private int dp2 = AndroidUtilities.dp(2);
+    private int dp70 = AndroidUtilities.dp(70);
+    private int dp16= AndroidUtilities.dp(16);
+    private int dp12 = AndroidUtilities.dp(12);
+
     public interface RotationWheelListener {
         void onStart();
         void onChange(float angle);
@@ -39,6 +46,7 @@ public class CropRotationWheel extends FrameLayout {
     private ImageView aspectRatioButton;
     private TextView degreesLabel;
 
+    protected float actualRotation;
     protected float rotation;
     private RectF tempRect;
     private float prevX;
@@ -87,7 +95,9 @@ public class CropRotationWheel extends FrameLayout {
 
         degreesLabel = new TextView(context);
         degreesLabel.setTextColor(Color.WHITE);
-        addView(degreesLabel, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+        degreesLabel.setGravity(Gravity.CENTER);
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, AndroidUtilities.dp(18));
+        addView(degreesLabel, lp);
 
         setWillNotDraw(false);
 
@@ -112,13 +122,20 @@ public class CropRotationWheel extends FrameLayout {
         rotationListener = listener;
     }
 
-    public void setRotation(float rotation, boolean animated) {
+    @Override
+    public float getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(float rotation, boolean silent) {
         this.rotation = rotation;
         float value = this.rotation;
-        if (Math.abs(value) < 0.1 - 0.001)
+        if (Math.abs(value) < 0.1f - 0.001f)
             value = Math.abs(value);
         degreesLabel.setText(String.format("%.1fº", value));
-
+        if (!silent && rotationListener != null) {
+            rotationListener.onChange(this.rotation);
+        }
         invalidate();
     }
 
@@ -146,14 +163,11 @@ public class CropRotationWheel extends FrameLayout {
             float newAngle = this.rotation + (float)(delta / AndroidUtilities.density / Math.PI / 1.65f);
             newAngle = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, newAngle));
 
-            if (Math.abs(newAngle - this.rotation) > 0.001) {
-                if (Math.abs(newAngle) < 0.05)
-                    newAngle = 0;
+            if (Math.abs(newAngle - this.rotation) > 0.001f) {
+                if (Math.abs(newAngle) < 0.5f)
+                    newAngle = 0f;
 
                 setRotation(newAngle, false);
-
-                if (rotationListener != null)
-                    rotationListener.onChange(this.rotation);
 
                 prevX = x;
             }
@@ -166,55 +180,56 @@ public class CropRotationWheel extends FrameLayout {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        int width = getWidth();
-        int height = getHeight();
+        float widthF = getWidth();
+        float heightF = getHeight();
 
-        float angle = -rotation * 2;
+        float angle = -rotation * 2f;
         float delta = angle % DELTA_ANGLE;
         int segments = (int)Math.floor(angle / DELTA_ANGLE);
 
         for (int i = 0; i < 16; i++) {
             Paint paint = whitePaint;
-            int a = i;
-            if (a < segments || (a == 0 && delta < 0))
-                paint = bluePaint;
 
-            drawLine(canvas, a, delta, width, height, (a == segments || a == 0 && segments == - 1), paint);
+            int a = i;
+            if (a < segments || (a == 0 && delta < 0)) paint = bluePaint;
+            drawLine(canvas, a, delta, widthF, heightF, (a == segments || a == 0 && segments == - 1), paint);
 
             if (i != 0) {
                 a = -i;
                 paint = a > segments ? bluePaint : whitePaint;
-                drawLine(canvas, a, delta, width, height, a == segments + 1, paint);
+                drawLine(canvas, a, delta, widthF, heightF, a == segments + 1, paint);
             }
         }
 
         bluePaint.setAlpha(255);
 
-        tempRect.left = (width - AndroidUtilities.dp(2.5f)) / 2;
-        tempRect.top = (height - AndroidUtilities.dp(22)) / 2;
-        tempRect.right = (width + AndroidUtilities.dp(2.5f)) / 2;
-        tempRect.bottom =  (height + AndroidUtilities.dp(22)) / 2;
-        canvas.drawRoundRect(tempRect, AndroidUtilities.dp(2), AndroidUtilities.dp(2), bluePaint);
+        tempRect.left = (widthF - dp2p5) / 2f;
+        tempRect.top = (heightF - dp22) / 2f;
+        tempRect.right = (widthF + dp2p5) / 2f;
+        tempRect.bottom =  (heightF + dp22) / 2f;
+        canvas.drawRoundRect(tempRect, dp2, dp2, bluePaint);
     }
 
-    protected void drawLine(Canvas canvas, int i, float delta, int width, int height, boolean center, Paint paint) {
-        int radius = (int)(width / 2.0f - AndroidUtilities.dp(70));
+    protected void drawLine(Canvas canvas, int i, float delta, float width, float height, boolean center, Paint paint) {
+        float radius = width / 2.0f - dp70;
 
         float angle = 90 - (i * DELTA_ANGLE + delta);
-        int val = (int)(radius * Math.cos(Math.toRadians(angle)));
-        int x = width / 2 + val;
+        float val = radius * (float) Math.cos(Math.toRadians(angle));
+        float x = width / 2f + val;
 
-        float f = Math.abs(val) / (float)radius;
+        float f = Math.abs(val) / radius;
         int alpha = Math.min(255, Math.max(0, (int)((1.0f - f * f) * 255)));
 
-        if (center)
-            paint = bluePaint;
+        if (center) paint = bluePaint;
+
+        float w = center ? 4f : 2f;
+        float h = center ? dp16 : dp12;
 
         paint.setAlpha(alpha);
+        paint.setStrokeWidth(w);
 
-        int w = center ? 4 : 2;
-        int h = center ? AndroidUtilities.dp(16) : AndroidUtilities.dp(12);
+        canvas.drawLine(x, (height - h) / 2f, x, (height + h) / 2f, paint);
 
-        canvas.drawRect(x - w / 2, (height - h) / 2, x + w / 2, (height + h) / 2, paint);
+        //canvas.drawRect(x - w / 2, (height - h) / 2, x + w / 2, (height + h) / 2, paint);
     }
 }
