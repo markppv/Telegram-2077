@@ -36,10 +36,14 @@ public class ChatListCell extends LinearLayout {
             textPaint.setTextSize(AndroidUtilities.dp(13));
 
             button = new RadioButton(context) {
+                private boolean dontInvalidateParent;
                 @Override
                 public void invalidate() {
                     super.invalidate();
-                    ListView.this.invalidate();
+                    if (!dontInvalidateParent) {
+                        ListView.this.invalidate();
+                        dontInvalidateParent = true;
+                    } else dontInvalidateParent = false;
                 }
             };
             button.setSize(AndroidUtilities.dp(20));
