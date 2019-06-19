@@ -8,10 +8,13 @@
 
 package org.telegram.ui.Components;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -27,13 +30,22 @@ public class PhotoCropView extends FrameLayout {
     private PhotoCropViewDelegate delegate;
     private boolean showOnSetBitmap;
 
+    private View backView;
     private CropView cropView;
     private CropRotationWheel wheelView;
 
     public PhotoCropView(Context context) {
         super(context);
 
+        setClipChildren(false);
+
+        backView = new View(context);
+        backView.setBackgroundColor(0xff000000);
+        backView.setVisibility(INVISIBLE);
+        addView(backView);
+
         cropView = new CropView(getContext());
+        cropView.setClipChildren(false);
         cropView.setListener(new CropView.CropViewListener() {
             @Override
             public void onChange(boolean reset) {
@@ -51,6 +63,7 @@ public class PhotoCropView extends FrameLayout {
         addView(cropView);
 
         wheelView = new CropRotationWheel(getContext());
+        // wheelView.setBackgroundColor(Color.BLACK);
         wheelView.setListener(new CropRotationWheel.RotationWheelListener() {
             @Override
             public void onStart() {
@@ -77,17 +90,14 @@ public class PhotoCropView extends FrameLayout {
 
             @Override
             public void rotate90Pressed() {
-                rotate();
+                toggleOrientation();
             }
         });
         addView(wheelView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER | Gravity.BOTTOM, 0, 0, 0, 0));
     }
 
-    public void rotate() {
-        if (wheelView != null) {
-            wheelView.reset();
-        }
-        cropView.rotate90Degrees();
+    public void toggleOrientation() {
+        cropView.toggleOrientation();
     }
 
     public void setBitmap(Bitmap bitmap, int rotation, boolean freeform, boolean update) {
@@ -109,9 +119,19 @@ public class PhotoCropView extends FrameLayout {
         return cropView.isReady();
     }
 
+    private ValueAnimator rotationAnimator = null;
+
     public void reset() {
-        wheelView.reset();
         cropView.reset();
+        if (rotationAnimator == null) {
+            rotationAnimator = ValueAnimator.ofFloat(wheelView.getRotation(), 0f);
+            rotationAnimator.addUpdateListener(a -> wheelView.setRotation((Float) a.getAnimatedValue(), true));
+            rotationAnimator.setDuration(300);
+        } else {
+            rotationAnimator.cancel();
+            rotationAnimator.setFloatValues(wheelView.getRotation(), 0f);
+        }
+        rotationAnimator.start();
     }
 
     public void onAppear() {
@@ -123,11 +143,11 @@ public class PhotoCropView extends FrameLayout {
     }
 
     public void hideBackView() {
-        cropView.hideBackView();
+        backView.setVisibility(INVISIBLE);
     }
 
     public void showBackView() {
-        cropView.showBackView();
+        backView.setVisibility(VISIBLE);
     }
 
     public void setFreeform(boolean freeform) {
@@ -135,6 +155,9 @@ public class PhotoCropView extends FrameLayout {
     }
 
     public void onAppeared() {
+        if (backView != null) {
+            backView.setVisibility(VISIBLE);
+        }
         if (cropView != null) {
             cropView.show();
         } else {
@@ -143,6 +166,9 @@ public class PhotoCropView extends FrameLayout {
     }
 
     public void onDisappear() {
+        if (backView != null) {
+            backView.setVisibility(INVISIBLE);
+        }
         if (cropView != null) {
             cropView.hide();
         }
