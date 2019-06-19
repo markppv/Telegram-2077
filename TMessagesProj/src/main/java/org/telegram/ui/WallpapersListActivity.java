@@ -969,6 +969,10 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             scrolling = true;
             listAdapter.notifyDataSetChanged();
         }
+        if (searchAdapter != null) {
+            scrolling = true;
+            searchAdapter.notifyDataSetChanged();
+        }
     }
 
     private void fixLayout() {
