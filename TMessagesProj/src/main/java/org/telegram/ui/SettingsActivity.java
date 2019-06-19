@@ -28,14 +28,11 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.core.content.FileProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -51,34 +48,43 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.telegram.messenger.AndroidUtilities;
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.telegram.PhoneFormat.PhoneFormat;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildConfig;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DataQuery;
+import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
-import org.telegram.messenger.NotificationsController;
-import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.UserObject;
-import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
+import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.NotificationsController;
+import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.messenger.FileLog;
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.MessagesStorage;
-import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.MessageObject;
+import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.ActionBarMenu;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.EmptyCell;
 import org.telegram.ui.Cells.GraySectionCell;
@@ -88,18 +94,13 @@ import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextDetailCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
-import org.telegram.ui.ActionBar.ActionBar;
-import org.telegram.ui.ActionBar.ActionBarMenu;
-import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.EmptyTextProgressView;
 import org.telegram.ui.Components.ImageUpdater;
-import org.telegram.ui.Components.BackupImageView;
-import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.voip.VoIPHelper;
@@ -144,6 +145,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     private TLRPC.FileLocation avatar;
     private TLRPC.FileLocation avatarBig;
 
+    private TLRPC.User user;
     private TLRPC.UserFull userInfo;
 
     private int extraHeight;
@@ -202,6 +204,12 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             avatarImage.getImageReceiver().setVisible(true, true);
         }
     };
+    private ActionBarMenuItem searchMenuItem;
+    private ActionBarMenu menu;
+
+    private boolean isFullyVisible;
+    private boolean updateBioWhenFullyVisible;
+    private boolean postCreateViewWhenFullyVisible;
 
     @Override
     public boolean onFragmentCreate() {
@@ -230,11 +238,30 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         helpRow = rowCount++;
         versionRow = rowCount++;
 
-        DataQuery.getInstance(currentAccount).checkFeaturedStickers();
-        userInfo = MessagesController.getInstance(currentAccount).getUserFull(UserConfig.getInstance(currentAccount).getClientUserId());
-        MessagesController.getInstance(currentAccount).loadUserInfo(UserConfig.getInstance(currentAccount).getCurrentUser(), true, classGuid);
+        userInfo = MessagesController.getInstance(currentAccount).getUserFull(
+                UserConfig.getInstance(currentAccount).getClientUserId());
 
         return true;
+    }
+
+    @Override
+    protected void onBecomeFullyVisible() {
+        super.onBecomeFullyVisible();
+        isFullyVisible = true;
+        if (updateBioWhenFullyVisible) {
+            listAdapter.notifyItemChanged(bioRow);
+            updateBioWhenFullyVisible = false;
+        }
+        if (postCreateViewWhenFullyVisible) {
+            postCreateViewWhenFullyVisible = false;
+            postCreateView();
+        }
+    }
+
+    @Override
+    protected void onBecomeFullyHidden() {
+        super.onBecomeFullyHidden();
+        isFullyVisible = false;
     }
 
     @Override
@@ -272,56 +299,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 }
             }
         });
-        ActionBarMenu menu = actionBar.createMenu();
-        ActionBarMenuItem searchItem = menu.addItem(search_button, R.drawable.ic_ab_search).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
-            @Override
-            public void onSearchExpand() {
-                if (otherItem != null) {
-                    otherItem.setVisibility(View.GONE);
-                }
-                searchAdapter.loadFaqWebPage();
-                listView.setAdapter(searchAdapter);
-                listView.setEmptyView(emptyView);
-                avatarContainer.setVisibility(View.GONE);
-                writeButton.setVisibility(View.GONE);
-                nameTextView.setVisibility(View.GONE);
-                onlineTextView.setVisibility(View.GONE);
-                extraHeightView.setVisibility(View.GONE);
-                fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                fragmentView.setTag(Theme.key_windowBackgroundWhite);
-                needLayout();
-            }
-
-            @Override
-            public void onSearchCollapse() {
-                if (otherItem != null) {
-                    otherItem.setVisibility(View.VISIBLE);
-                }
-                listView.setAdapter(listAdapter);
-                listView.setEmptyView(null);
-                emptyView.setVisibility(View.GONE);
-                avatarContainer.setVisibility(View.VISIBLE);
-                writeButton.setVisibility(View.VISIBLE);
-                nameTextView.setVisibility(View.VISIBLE);
-                onlineTextView.setVisibility(View.VISIBLE);
-                extraHeightView.setVisibility(View.VISIBLE);
-                fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
-                fragmentView.setTag(Theme.key_windowBackgroundGray);
-                needLayout();
-            }
-
-            @Override
-            public void onTextChanged(EditText editText) {
-                searchAdapter.search(editText.getText().toString().toLowerCase());
-            }
-        });
-        searchItem.setContentDescription(LocaleController.getString("SearchInSettings", R.string.SearchInSettings));
-        searchItem.setSearchFieldHint(LocaleController.getString("SearchInSettings", R.string.SearchInSettings));
-
+        menu = actionBar.createMenu();
+        searchMenuItem = menu.addItem(search_button, R.drawable.ic_ab_search);
         otherItem = menu.addItem(0, R.drawable.ic_ab_other);
-        otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
-        otherItem.addSubItem(edit_name, R.drawable.msg_edit, LocaleController.getString("EditName", R.string.EditName));
-        otherItem.addSubItem(logout, R.drawable.msg_leave, LocaleController.getString("LogOut", R.string.LogOut));
 
         int scrollTo;
         int scrollToPosition = 0;
@@ -340,7 +320,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         }
 
         listAdapter = new ListAdapter(context);
-        searchAdapter = new SearchAdapter(context);
 
         fragmentView = new FrameLayout(context);
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
@@ -500,13 +479,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
         });
 
-        emptyView = new EmptyTextProgressView(context);
-        emptyView.showTextView();
-        emptyView.setTextSize(18);
-        emptyView.setVisibility(View.GONE);
-        emptyView.setShowAtCenter(true);
-        frameLayout.addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-
         frameLayout.addView(actionBar);
 
         extraHeightView = new View(context);
@@ -576,7 +548,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         nameTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
         nameTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         nameTextView.setPivotY(0);
-        frameLayout.addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 48 : 118, 0, LocaleController.isRTL ? 166 : 96, 0));
+        frameLayout.addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 48 : 118, 0, LocaleController.isRTL ? 166 : 96, 0));
 
         onlineTextView = new TextView(context);
         onlineTextView.setTextColor(Theme.getColor(Theme.key_profile_status));
@@ -586,7 +558,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         onlineTextView.setSingleLine(true);
         onlineTextView.setEllipsize(TextUtils.TruncateAt.END);
         onlineTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
-        frameLayout.addView(onlineTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 48 : 118, 0, LocaleController.isRTL ? 166 : 96, 0));
+        frameLayout.addView(onlineTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 48 : 118, 0, LocaleController.isRTL ? 166 : 96, 0));
 
         writeButton = new ImageView(context);
         Drawable drawable = Theme.createSimpleSelectorCircleDrawable(AndroidUtilities.dp(56), Theme.getColor(Theme.key_profile_actionBackground), Theme.getColor(Theme.key_profile_actionPressedBackground));
@@ -671,7 +643,77 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
         });
 
+        if (isFullyVisible) { // conf changing
+            this.user = null;
+            postCreateView();
+            updateUserData();
+        } else {
+            postCreateViewWhenFullyVisible = true;
+        }
+
         return fragmentView;
+    }
+
+    private void postCreateView() {
+        DataQuery.getInstance(currentAccount).checkFeaturedStickers();
+        MessagesController.getInstance(currentAccount).loadUserInfo(UserConfig.getInstance(currentAccount).getCurrentUser(), true, classGuid);
+        searchMenuItem.setIsSearchField(true);
+        searchMenuItem.setSearchFieldHint(LocaleController.getString("SearchInSettings", R.string.SearchInSettings));
+        searchMenuItem.setContentDescription(LocaleController.getString("SearchInSettings", R.string.SearchInSettings));
+        searchMenuItem.setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
+            @Override
+            public void onSearchExpand() {
+                if (otherItem != null) {
+                    otherItem.setVisibility(View.GONE);
+                }
+                searchAdapter.loadFaqWebPage();
+                listView.setAdapter(searchAdapter);
+                listView.setEmptyView(emptyView);
+                avatarContainer.setVisibility(View.GONE);
+                writeButton.setVisibility(View.GONE);
+                nameTextView.setVisibility(View.GONE);
+                onlineTextView.setVisibility(View.GONE);
+                extraHeightView.setVisibility(View.GONE);
+                fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                fragmentView.setTag(Theme.key_windowBackgroundWhite);
+                needLayout();
+            }
+
+            @Override
+            public void onSearchCollapse() {
+                if (otherItem != null) {
+                    otherItem.setVisibility(View.VISIBLE);
+                }
+                listView.setAdapter(listAdapter);
+                listView.setEmptyView(null);
+                emptyView.setVisibility(View.GONE);
+                avatarContainer.setVisibility(View.VISIBLE);
+                writeButton.setVisibility(View.VISIBLE);
+                nameTextView.setVisibility(View.VISIBLE);
+                onlineTextView.setVisibility(View.VISIBLE);
+                extraHeightView.setVisibility(View.VISIBLE);
+                fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+                fragmentView.setTag(Theme.key_windowBackgroundGray);
+                needLayout();
+            }
+
+            @Override
+            public void onTextChanged(EditText editText) {
+                searchAdapter.search(editText.getText().toString().toLowerCase());
+            }
+        });
+        otherItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
+        otherItem.addSubItem(edit_name, R.drawable.msg_edit, LocaleController.getString("EditName", R.string.EditName));
+        otherItem.addSubItem(logout, R.drawable.msg_leave, LocaleController.getString("LogOut", R.string.LogOut));
+
+        Context context = getParentActivity();
+        searchAdapter = new SearchAdapter(context);
+        emptyView = new EmptyTextProgressView(context);
+        emptyView.showTextView();
+        emptyView.setTextSize(18);
+        emptyView.setVisibility(View.GONE);
+        emptyView.setShowAtCenter(true);
+        ((FrameLayout) fragmentView).addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 
     @Override
@@ -821,9 +863,14 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             }
         } else if (id == NotificationCenter.userInfoDidLoad) {
             Integer uid = (Integer) args[0];
-            if (uid == UserConfig.getInstance(currentAccount).getClientUserId() && listAdapter != null) {
+            if (uid == UserConfig.getInstance(currentAccount).getClientUserId()) {
+                TLRPC.UserFull oldUserInfo = userInfo;
                 userInfo = (TLRPC.UserFull) args[1];
-                listAdapter.notifyItemChanged(bioRow);
+                if (oldUserInfo == null || !TextUtils.equals(oldUserInfo.about, userInfo.about)) {
+                    if (isFullyVisible) {
+                        listAdapter.notifyItemChanged(bioRow);
+                    } else updateBioWhenFullyVisible = true;
+                }
             }
         } else if (id == NotificationCenter.emojiDidLoad) {
             if (listView != null) {
@@ -838,9 +885,16 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         if (listAdapter != null) {
             listAdapter.notifyDataSetChanged();
         }
+        onlineTextView.setText(LocaleController.getString("Online", R.string.Online));
         updateUserData();
         fixLayout();
         setParentActivityTitle(LocaleController.getString("Settings", R.string.Settings));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        this.user = null;
     }
 
     @Override
@@ -859,10 +913,12 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 listView.setLayoutParams(layoutParams);
                 extraHeightView.setTranslationY(newTop);
             }
-            layoutParams = (FrameLayout.LayoutParams) emptyView.getLayoutParams();
-            if (layoutParams.topMargin != newTop) {
-                layoutParams.topMargin = newTop;
-                emptyView.setLayoutParams(layoutParams);
+            if (emptyView != null) {
+                layoutParams = (FrameLayout.LayoutParams) emptyView.getLayoutParams();
+                if (layoutParams.topMargin != newTop) {
+                    layoutParams.topMargin = newTop;
+                    emptyView.setLayoutParams(layoutParams);
+                }
             }
         }
 
@@ -963,26 +1019,43 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
     }
 
     private void updateUserData() {
-        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).getClientUserId());
-        if (user == null) {
-            return;
-        }
-        TLRPC.FileLocation photoBig = null;
-        if (user.photo != null) {
-            photoBig = user.photo.photo_big;
-        }
-        avatarDrawable = new AvatarDrawable(user, true);
+        if (nameTextView == null) return;
 
-        avatarDrawable.setColor(Theme.getColor(Theme.key_avatar_backgroundInProfileBlue));
-        if (avatarImage != null) {
-            avatarImage.setImage(ImageLocation.getForUser(user, false), "50_50", avatarDrawable, user);
-            avatarImage.getImageReceiver().setVisible(!PhotoViewer.isShowingImage(photoBig), false);
+        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(
+                UserConfig.getInstance(currentAccount).getClientUserId());
 
-            nameTextView.setText(UserObject.getUserName(user));
-            onlineTextView.setText(LocaleController.getString("Online", R.string.Online));
+        if (user == null) return;
 
-            avatarImage.getImageReceiver().setVisible(!PhotoViewer.isShowingImage(photoBig), false);
+        String userName = null;
+
+        if (this.user == null) {
+            userName = UserObject.getUserName(user);
+        } else {
+            String oldName = UserObject.getUserName(this.user);
+            String newName = UserObject.getUserName(user);
+            if (!oldName.equals(newName)) userName = newName;
         }
+
+        if (userName != null) {
+            nameTextView.setText(userName);
+        }
+
+        if (this.user == null || user.photo.photo_id != this.user.photo.photo_id) {
+            TLRPC.FileLocation photoBig = null;
+            if (user.photo != null) {
+                photoBig = user.photo.photo_big;
+            }
+
+            avatarDrawable = new AvatarDrawable(user, true);
+            avatarDrawable.setColor(Theme.getColor(Theme.key_avatar_backgroundInProfileBlue));
+
+            if (avatarImage != null) {
+                avatarImage.setImage(ImageLocation.getForUser(user, false), "50_50", avatarDrawable, user);
+                avatarImage.getImageReceiver().setVisible(!PhotoViewer.isShowingImage(photoBig), false);
+            }
+        }
+
+        this.user = user;
     }
 
     private void showHelpAlert() {
