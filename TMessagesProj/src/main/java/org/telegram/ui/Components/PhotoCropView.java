@@ -74,7 +74,7 @@ public class PhotoCropView extends FrameLayout {
             public void onChange(float angle) {
                 cropView.setRotation(angle);
                 if (delegate != null) {
-                    delegate.onChange(false);
+                    delegate.onChange(cropView.isChanged());
                 }
             }
 

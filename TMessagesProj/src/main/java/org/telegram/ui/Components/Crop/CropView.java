@@ -702,9 +702,13 @@ public class CropView extends FrameLayout implements CropAreaView.AreaViewListen
         startOrientationAnim();
 
         if (listener != null) {
-            listener.onChange(orientationAnimEndValue % 360f == 0f && state.rotation == 0f &&
-                    areaView.getLockAspectRatio() == 0f && !isMoved);
+            listener.onChange(isChanged());
         }
+    }
+
+    public boolean isChanged() {
+        return orientationAnimEndValue % 360f == 0f && state.rotation == 0f &&
+                areaView.getLockAspectRatio() == 0f && !isMoved;
     }
 
     @Override
