@@ -1641,6 +1641,20 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                 super.setCurrentItem(item, smoothScroll);
             }
         };
+        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageSelected(int position) {
+            }
+
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                startStopVisibleGifs((position == 0 && positionOffset > 0) || position == 1);
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
         pager.setAdapter(new EmojiPagesAdapter());
 
         topShadow = new View(context);
