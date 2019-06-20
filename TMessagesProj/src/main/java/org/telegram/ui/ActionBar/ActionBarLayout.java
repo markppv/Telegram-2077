@@ -16,6 +16,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Outline;
@@ -24,7 +25,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import androidx.annotation.Keep;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
@@ -37,7 +37,11 @@ import android.view.ViewOutlineProvider;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+
+import androidx.annotation.Keep;
+import androidx.appcompat.widget.AppCompatImageView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLog;
@@ -183,6 +187,7 @@ public class ActionBarLayout extends FrameLayout {
     private Runnable onOpenAnimationEndRunnable;
     private boolean useAlphaAnimations;
     private View backgroundView;
+    private ImageView themeTransitionView;
     private boolean removeActionBarExtraHeight;
     private Runnable animationRunnable;
 
@@ -207,6 +212,11 @@ public class ActionBarLayout extends FrameLayout {
             headerShadowDrawable = getResources().getDrawable(R.drawable.header_shadow).mutate();
             scrimPaint = new Paint();
         }
+
+        themeTransitionView = new AppCompatImageView(context);
+        themeTransitionView.setVisibility(GONE);
+        themeTransitionView.setClickable(true);
+        addView(themeTransitionView);
     }
 
     public void init(ArrayList<BaseFragment> stack) {
@@ -1297,7 +1307,7 @@ public class ActionBarLayout extends FrameLayout {
                     g = Math.min(255, (int) (gS + (gE - gS) * value));
                     b = Math.min(255, (int) (bS + (bE - bS) * value));
                     int color = Color.argb(a, r, g, b);
-                    Theme.setAnimatedColor(themeAnimatorDescriptions[j][i].getCurrentKey(), color);
+                    Theme.setAnimatedColor(themeAnimatorDescriptions[j][i].currentKey, color);
                     themeAnimatorDescriptions[j][i].setColor(color, false, false);
                 }
                 if (themeAnimatorDelegate[j] != null) {
@@ -1324,7 +1334,7 @@ public class ActionBarLayout extends FrameLayout {
             themeAnimatorSet = null;
         }
         boolean startAnimation = false;
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 1 /* todo 2 */; i++) {
             BaseFragment fragment;
             if (i == 0) {
                 fragment = getLastFragment();
@@ -1350,6 +1360,16 @@ public class ActionBarLayout extends FrameLayout {
                     }
                 }
                 if (i == 0) {
+                    Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
+                            Bitmap.Config.ARGB_8888);
+                    bitmap.setHasAlpha(false);
+                    Canvas canvas = new Canvas(bitmap);
+                    draw(canvas);
+
+                    themeTransitionView.setImageBitmap(bitmap);
+                    themeTransitionView.setVisibility(VISIBLE);
+                    themeTransitionView.bringToFront();
+
                     Theme.applyTheme(theme, nightTheme);
                 }
                 animateEndColors[i] = new int[themeAnimatorDescriptions[i].length];
@@ -1372,20 +1392,16 @@ public class ActionBarLayout extends FrameLayout {
                         }
                         Theme.setAnimatingColor(false);
                         themeAnimatorSet = null;
-                    }
-                }
-
-                @Override
-                public void onAnimationCancel(Animator animation) {
-                    if (animation.equals(themeAnimatorSet)) {
-                        for (int a = 0; a < 2; a++) {
-                            themeAnimatorDescriptions[a] = null;
-                            animateStartColors[a] = null;
-                            animateEndColors[a] = null;
-                            themeAnimatorDelegate[a] = null;
-                        }
-                        Theme.setAnimatingColor(false);
-                        themeAnimatorSet = null;
+                        themeTransitionView.animate()
+                                .alpha(0f)
+                                .setDuration(200)
+                                .setStartDelay(Theme.isWallpaperAColor() ? 0 : 200)
+                                .withEndAction(() -> {
+                                    themeTransitionView.setImageBitmap(null);
+                                    themeTransitionView.setVisibility(GONE);
+                                    themeTransitionView.setAlpha(1f);
+                                })
+                                .start();
                     }
                 }
             });
@@ -1397,7 +1413,7 @@ public class ActionBarLayout extends FrameLayout {
             }
             Theme.setAnimatingColor(true);
             themeAnimatorSet.playTogether(ObjectAnimator.ofFloat(this, "themeAnimationValue", 0.0f, 1.0f));
-            themeAnimatorSet.setDuration(200);
+            themeAnimatorSet.setDuration(0);
             themeAnimatorSet.start();
         }
     }
