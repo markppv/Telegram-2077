@@ -27,6 +27,8 @@ import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.viewpager.widget.ViewPager;
+
 import com.airbnb.lottie.LottieAnimationView;
 import com.airbnb.lottie.LottieDrawable;
 import com.airbnb.lottie.LottieProperty;
@@ -62,8 +64,6 @@ import org.telegram.ui.Components.TypefaceSpan;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import androidx.viewpager.widget.ViewPager;
 
 public class ThemeDescription {
 
@@ -104,7 +104,7 @@ public class ThemeDescription {
     private Paint[] paintToUpdate;
     private Drawable[] drawablesToUpdate;
     private Class[] listClasses;
-    private String currentKey;
+    public String currentKey;
     private String lottieLayerName;
     private ThemeDescriptionDelegate delegate;
     private int previousColor;

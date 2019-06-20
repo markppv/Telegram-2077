@@ -34,12 +34,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
-
-import androidx.core.content.FileProvider;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.text.InputType;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -53,6 +47,11 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.core.content.FileProvider;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -258,59 +257,36 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
             messagesContainer = new LinearLayout(context) {
 
-                private Drawable backgroundDrawable;
-                private Drawable oldBackgroundDrawable;
-
                 @Override
                 protected void onDraw(Canvas canvas) {
-                    Drawable newDrawable = Theme.getCachedWallpaperNonBlocking();
-                    if (newDrawable != backgroundDrawable && newDrawable != null) {
-                        if (Theme.isAnimatingColor()) {
-                            oldBackgroundDrawable = backgroundDrawable;
-                        }
-                        backgroundDrawable = newDrawable;
-                    }
-                    float themeAnimationValue = parentLayout.getThemeAnimationValue();
-                    for (int a = 0; a < 2; a++) {
-                        Drawable drawable = a == 0 ? oldBackgroundDrawable : backgroundDrawable;
-                        if (drawable == null) {
-                            continue;
-                        }
-                        if (a == 1 && oldBackgroundDrawable != null && parentLayout != null) {
-                            drawable.setAlpha((int) (255 * themeAnimationValue));
+                    Drawable backgroundDrawable = Theme.getCachedWallpaperNonBlocking();
+                    if (backgroundDrawable == null) return;
+                    if (backgroundDrawable instanceof ColorDrawable) {
+                        backgroundDrawable.setBounds(0, 0, getMeasuredWidth(), getMeasuredHeight());
+                        backgroundDrawable.draw(canvas);
+                    } else if (backgroundDrawable instanceof BitmapDrawable) {
+                        BitmapDrawable bitmapDrawable = (BitmapDrawable) backgroundDrawable;
+                        if (bitmapDrawable.getTileModeX() == Shader.TileMode.REPEAT) {
+                            canvas.save();
+                            float scale = 2.0f / AndroidUtilities.density;
+                            canvas.scale(scale, scale);
+                            backgroundDrawable.setBounds(0, 0, (int) Math.ceil(getMeasuredWidth() / scale), (int) Math.ceil(getMeasuredHeight() / scale));
+                            backgroundDrawable.draw(canvas);
+                            canvas.restore();
                         } else {
-                            drawable.setAlpha(255);
-                        }
-                        if (drawable instanceof ColorDrawable) {
-                            drawable.setBounds(0, 0, getMeasuredWidth(), getMeasuredHeight());
-                            drawable.draw(canvas);
-                        } else if (drawable instanceof BitmapDrawable) {
-                            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-                            if (bitmapDrawable.getTileModeX() == Shader.TileMode.REPEAT) {
-                                canvas.save();
-                                float scale = 2.0f / AndroidUtilities.density;
-                                canvas.scale(scale, scale);
-                                drawable.setBounds(0, 0, (int) Math.ceil(getMeasuredWidth() / scale), (int) Math.ceil(getMeasuredHeight() / scale));
-                                drawable.draw(canvas);
-                                canvas.restore();
-                            } else {
-                                int viewHeight = getMeasuredHeight();
-                                float scaleX = (float) getMeasuredWidth() / (float) drawable.getIntrinsicWidth();
-                                float scaleY = (float) (viewHeight) / (float) drawable.getIntrinsicHeight();
-                                float scale = scaleX < scaleY ? scaleY : scaleX;
-                                int width = (int) Math.ceil(drawable.getIntrinsicWidth() * scale);
-                                int height = (int) Math.ceil(drawable.getIntrinsicHeight() * scale);
-                                int x = (getMeasuredWidth() - width) / 2;
-                                int y = (viewHeight - height) / 2;
-                                canvas.save();
-                                canvas.clipRect(0, 0, width, getMeasuredHeight());
-                                drawable.setBounds(x, y, x + width, y + height);
-                                drawable.draw(canvas);
-                                canvas.restore();
-                            }
-                        }
-                        if (a == 0 && oldBackgroundDrawable != null && themeAnimationValue >= 1.0f) {
-                            oldBackgroundDrawable = null;
+                            int viewHeight = getMeasuredHeight();
+                            float scaleX = (float) getMeasuredWidth() / (float) backgroundDrawable.getIntrinsicWidth();
+                            float scaleY = (float) (viewHeight) / (float) backgroundDrawable.getIntrinsicHeight();
+                            float scale = scaleX < scaleY ? scaleY : scaleX;
+                            int width = (int) Math.ceil(backgroundDrawable.getIntrinsicWidth() * scale);
+                            int height = (int) Math.ceil(backgroundDrawable.getIntrinsicHeight() * scale);
+                            int x = (getMeasuredWidth() - width) / 2;
+                            int y = (viewHeight - height) / 2;
+                            canvas.save();
+                            canvas.clipRect(0, 0, width, getMeasuredHeight());
+                            backgroundDrawable.setBounds(x, y, x + width, y + height);
+                            backgroundDrawable.draw(canvas);
+                            canvas.restore();
                         }
                     }
                     shadowDrawable.setBounds(0, 0, getMeasuredWidth(), getMeasuredHeight());
@@ -1259,11 +1235,11 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         @Override
         protected void onAttachedToWindow() {
             super.onAttachedToWindow();
-            button.setChecked(themeInfo == Theme.getCurrentTheme(), false);
+            updateCurrentThemeCheck();
         }
 
         public void updateCurrentThemeCheck() {
-            button.setChecked(themeInfo == Theme.getCurrentTheme(), true);
+            button.setChecked(themeInfo == Theme.getCurrentTheme(), false);
         }
 
         @Override

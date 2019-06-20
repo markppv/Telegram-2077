@@ -4064,6 +4064,10 @@ public class Theme {
         }
     }
 
+    public static boolean isWallpaperAColor() {
+        return currentColors.containsKey(key_chat_wallpaper) && themedWallpaperFileOffset <= 0;
+    }
+
     public static boolean hasWallpaperFromTheme() {
         return currentColors.containsKey(key_chat_wallpaper) || themedWallpaperFileOffset > 0;
     }

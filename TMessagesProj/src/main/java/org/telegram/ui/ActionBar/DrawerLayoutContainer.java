@@ -20,7 +20,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import androidx.annotation.Keep;
 import android.view.DisplayCutout;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -32,6 +31,8 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ListView;
+
+import androidx.annotation.Keep;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
@@ -75,6 +76,8 @@ public class DrawerLayoutContainer extends FrameLayout {
     private float drawerPosition;
     private boolean drawerOpened;
     private boolean allowDrawContent = true;
+
+    private int dp20 = AndroidUtilities.dp(20);
 
     public DrawerLayoutContainer(Context context) {
         super(context);
@@ -527,7 +530,7 @@ public class DrawerLayoutContainer extends FrameLayout {
                 canvas.drawRect(clipLeft, 0, clipRight, getHeight(), scrimPaint);
             }
         } else if (shadowLeft != null) {
-            final float alpha = Math.max(0, Math.min(drawerPosition / AndroidUtilities.dp(20), 1.0f));
+            final float alpha = Math.max(0, Math.min(drawerPosition / dp20, 1.0f));
             if (alpha != 0) {
                 shadowLeft.setBounds((int) drawerPosition, child.getTop(), (int) drawerPosition + shadowLeft.getIntrinsicWidth(), child.getBottom());
                 shadowLeft.setAlpha((int) (0xff * alpha));
