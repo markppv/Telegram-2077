@@ -665,6 +665,9 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             item.addSubItem(create_theme, R.drawable.menu_palette, LocaleController.getString("CreateNewThemeMenu", R.string.CreateNewThemeMenu));
         } else if (currentType == THEME_TYPE_ALL) {
             actionBar.setTitle(LocaleController.getString("ColorThemes", R.string.ColorThemes));
+            ActionBarMenu menu = actionBar.createMenu();
+            ActionBarMenuItem item = menu.addItem(create_theme, R.drawable.add);
+            item.setContentDescription(LocaleController.getString("CreateNewThemeMenu", R.string.CreateNewThemeMenu));
         } else {
             actionBar.setTitle(LocaleController.getString("AutoNightTheme", R.string.AutoNightTheme));
         }
