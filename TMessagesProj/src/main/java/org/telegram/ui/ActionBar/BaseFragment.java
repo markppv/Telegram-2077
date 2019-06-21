@@ -15,11 +15,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
+
+import androidx.core.util.Consumer;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.ApplicationLoader;
@@ -31,6 +34,9 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BaseFragment {
 
@@ -48,6 +54,8 @@ public class BaseFragment {
     protected Bundle arguments;
     protected boolean swipeBackEnabled = true;
     protected boolean hasOwnBackground = false;
+
+    private final List<Runnable> fullyVisibleActions = new ArrayList<>();
 
     public BaseFragment() {
         classGuid = ConnectionsManager.generateClassGuid();
@@ -368,10 +376,22 @@ public class BaseFragment {
                 }
             }
         }
+        for (int i = 0; i < fullyVisibleActions.size(); i++) {
+            fullyVisibleActions.get(i).run();
+        }
+        fullyVisibleActions.clear();
     }
 
     protected void onBecomeFullyHidden() {
         isFullyVisible = false;
+    }
+
+    public void doWhenFullyVisible(Runnable action) {
+        if (isFullyVisible) {
+            action.run();
+        } else {
+            fullyVisibleActions.add(action);
+        }
     }
 
     protected AnimatorSet onCustomTransitionAnimation(boolean isOpen, final Runnable callback) {
