@@ -968,7 +968,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         builder.setView(linearLayout);
 
         final TextView message = new TextView(getParentActivity());
-        message.setText(LocaleController.formatString("EnterThemeName", R.string.EnterThemeName));
+        message.setText(LocaleController.getString("EnterThemeName", R.string.EnterThemeName));
         message.setTextSize(16);
         message.setPadding(AndroidUtilities.dp(23), AndroidUtilities.dp(12), AndroidUtilities.dp(23), AndroidUtilities.dp(6));
         message.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
@@ -998,18 +998,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         }));
         showDialog(alertDialog);
         alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            if (editText.length() == 0) {
-                Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
-                if (vibrator != null) {
-                    vibrator.vibrate(200);
-                }
-                AndroidUtilities.shakeView(editText, 2, 0);
-                return;
-            }
+            String themeName = checkThemeName(editText);
+            if (themeName == null) return;
+
             ThemeEditorView themeEditorView = new ThemeEditorView();
-            String name = editText.getText().toString() + ".attheme";
-            themeEditorView.show(getParentActivity(), name);
-            Theme.saveCurrentTheme(name, true);
+            themeEditorView.show(getParentActivity(), themeName);
+            Theme.saveCurrentTheme(themeName, true);
             updateRows();
             alertDialog.dismiss();
 
@@ -1024,6 +1018,36 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 FileLog.e(e);
             }
         });
+    }
+
+    private String checkThemeName(EditTextBoldCursor editText) {
+        String trimmedText = editText.getText().toString().trim();
+
+        if (trimmedText.isEmpty()) {
+            Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+            if (vibrator != null) {
+                vibrator.vibrate(200);
+            }
+            AndroidUtilities.shakeView(editText, 2, 0);
+            return null;
+        }
+
+        String themeName = trimmedText + ".attheme";
+        ArrayList<Theme.ThemeInfo> themes = Theme.themes;
+
+        for (int i = 0; i < themes.size(); i++) {
+            if (TextUtils.equals(themeName, themes.get(i).name)) {
+                Toast.makeText(getParentActivity(), LocaleController.getString("ThemeAlreadyExists", R.string.ThemeAlreadyExists), Toast.LENGTH_SHORT).show();
+                Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+                if (vibrator != null) {
+                    vibrator.vibrate(200);
+                }
+                AndroidUtilities.shakeView(editText, 2, 0);
+                return null;
+            }
+        }
+
+        return themeName;
     }
 
     private void updateSunTime(Location lastKnownLocation, boolean forceUpdate) {
@@ -1351,6 +1375,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 items = new CharSequence[]{
                         LocaleController.getString("ShareFile", R.string.ShareFile),
                         LocaleController.getString("Edit", R.string.Edit),
+                        LocaleController.getString("EditName", R.string.EditName),
                         LocaleController.getString("Delete", R.string.Delete)};
             }
             builder.setItems(items, (dialog, which) -> {
@@ -1409,6 +1434,55 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         parentLayout.rebuildAllFragmentViews(true, true);
                         new ThemeEditorView().show(getParentActivity(), themeInfo.name);
                     }
+                } else if (which == 2) {
+                    final EditTextBoldCursor editText = new EditTextBoldCursor(getParentActivity());
+                    final AlertDialog.Builder editNameDialogBuilder = new AlertDialog.Builder(getParentActivity());
+                    editNameDialogBuilder.setTitle(LocaleController.getString("EditThemeName", R.string.EditThemeName));
+                    editNameDialogBuilder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+                        String themeName = checkThemeName(editText);
+                        if (themeName == null) return;
+                        Theme.renameTheme(themeInfo, themeName);
+                        updateRows();
+                        dialogInterface.dismiss();
+                    });
+                    editNameDialogBuilder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel),
+                            (dialogInterface, i) -> dialogInterface.dismiss());
+
+                    LinearLayout linearLayout = new LinearLayout(getParentActivity());
+                    linearLayout.setOrientation(LinearLayout.VERTICAL);
+                    editNameDialogBuilder.setView(linearLayout);
+
+                    if (themeInfo.name.endsWith(".attheme")) {
+                        editText.setText(themeInfo.name.substring(0, themeInfo.name.length() - ".attheme".length()));
+                    } else editText.setText(themeInfo.name);
+                    editText.setBackground(Theme.createEditTextDrawable(getParentActivity(), true));
+                    editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+                    editText.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+                    editText.setMaxLines(1);
+                    editText.setLines(1);
+                    editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+                    editText.setGravity(Gravity.LEFT | Gravity.TOP);
+                    editText.setSingleLine(true);
+                    editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                    editText.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                    editText.setCursorSize(AndroidUtilities.dp(20));
+                    editText.setCursorWidth(1.5f);
+                    editText.setPadding(0, AndroidUtilities.dp(4), 0, 0);
+                    linearLayout.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, Gravity.TOP | Gravity.LEFT, 24, 6, 24, 0));
+                    editText.setOnEditorActionListener((textView, i, keyEvent) -> {
+                        AndroidUtilities.hideKeyboard(textView);
+                        return false;
+                    });
+
+                    final AlertDialog alertDialog = editNameDialogBuilder.create();
+                    alertDialog.setDismissDialogByButtons(false);
+                    alertDialog.setOnShowListener(dialogInterface ->
+                            AndroidUtilities.runOnUIThread(() -> {
+                                editText.requestFocus();
+                                AndroidUtilities.showKeyboard(editText);
+                                editText.setSelection(editText.getText().length());
+                            }));
+                    showDialog(alertDialog);
                 } else {
                     if (getParentActivity() == null) {
                         return;
