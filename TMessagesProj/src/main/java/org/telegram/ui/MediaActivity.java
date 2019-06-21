@@ -1316,7 +1316,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
         if (id == NotificationCenter.mediaDidLoad) {
             long uid = (Long) args[0];
             int guid = (Integer) args[3];
-            if (guid == classGuid) {
+            if (guid == classGuid) doWhenFullyVisible(() -> {
                 int type = (Integer) args[4];
                 sharedMediaData[type].loading = false;
                 sharedMediaData[type].totalCount = (Integer) args[1];
@@ -1389,7 +1389,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                         mediaPages[a].layoutManager.scrollToPositionWithOffset(0, (int) actionBar.getTranslationY());
                     }
                 }
-            }
+            });
         } else if (id == NotificationCenter.messagesDeleted) {
             TLRPC.Chat currentChat = null;
             if ((int) dialog_id < 0) {
@@ -1417,7 +1417,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                     }
                 }
             }
-            if (updated) {
+            if (updated) doWhenFullyVisible(() -> {
                 scrolling = true;
                 if (photoVideoAdapter != null) {
                     photoVideoAdapter.notifyDataSetChanged();
@@ -1434,7 +1434,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                 if (audioAdapter != null) {
                     audioAdapter.notifyDataSetChanged();
                 }
-            }
+            });
         } else if (id == NotificationCenter.didReceiveNewMessages) {
             long uid = (Long) args[0];
             if (uid == dialog_id) {
@@ -1455,7 +1455,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                         hasMedia[type] = 1;
                     }
                 }
-                if (updated) {
+                if (updated) doWhenFullyVisible(() -> {
                     scrolling = true;
                     for (int a = 0; a < mediaPages.length; a++) {
                         RecyclerListView.Adapter adapter = null;
@@ -1483,7 +1483,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                         }
                     }
                     updateTabs();
-                }
+                });
             }
         } else if (id == NotificationCenter.messageReceivedByServer) {
             Integer msgId = (Integer) args[0];
