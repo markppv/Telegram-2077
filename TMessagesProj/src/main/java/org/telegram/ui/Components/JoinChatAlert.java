@@ -18,6 +18,9 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
@@ -32,23 +35,20 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.JoinSheetUserCell;
 import org.telegram.ui.ChatActivity;
 
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-public class JoinGroupAlert extends BottomSheet {
+public class JoinChatAlert extends BottomSheet {
 
     private TLRPC.ChatInvite chatInvite;
-    private String hash;
+    private String chatInviteHash;
     private BaseFragment fragment;
 
-    public JoinGroupAlert(final Context context, TLRPC.ChatInvite invite, String group, BaseFragment parentFragment) {
+    public JoinChatAlert(final Context context, TLRPC.ChatInvite invite, String group, BaseFragment parentFragment) {
         super(context, false, 0);
         setApplyBottomPadding(false);
         setApplyTopPadding(false);
 
         fragment = parentFragment;
         chatInvite = invite;
-        hash = group;
+        chatInviteHash = group;
 
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -123,11 +123,13 @@ public class JoinGroupAlert extends BottomSheet {
         pickerBottomLayout.doneButton.setVisibility(View.VISIBLE);
         pickerBottomLayout.doneButtonBadgeTextView.setVisibility(View.GONE);
         pickerBottomLayout.doneButtonTextView.setTextColor(Theme.getColor(Theme.key_dialogTextBlue2));
-        pickerBottomLayout.doneButtonTextView.setText(LocaleController.getString("JoinGroup", R.string.JoinGroup));
+        pickerBottomLayout.doneButtonTextView.setText(!invite.channel ?
+                LocaleController.getString("JoinGroup", R.string.JoinGroup) :
+                LocaleController.getString("JoinChannel", R.string.JoinChannel));
         pickerBottomLayout.doneButton.setOnClickListener(v -> {
             dismiss();
             final TLRPC.TL_messages_importChatInvite req = new TLRPC.TL_messages_importChatInvite();
-            req.hash = hash;
+            req.hash = chatInviteHash;
             ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
                 if (error == null) {
                     TLRPC.Updates updates = (TLRPC.Updates) response;

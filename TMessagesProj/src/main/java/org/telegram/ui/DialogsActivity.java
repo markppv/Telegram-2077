@@ -119,7 +119,7 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.DialogsItemAnimator;
 import org.telegram.ui.Components.FragmentContextView;
 import org.telegram.ui.Components.EmptyTextProgressView;
-import org.telegram.ui.Components.JoinGroupAlert;
+import org.telegram.ui.Components.JoinChatAlert;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
 import org.telegram.ui.Components.PacmanAnimation;
@@ -1184,7 +1184,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         if (index > 0) {
                             hash = hash.substring(index + 1);
                         }
-                        showDialog(new JoinGroupAlert(getParentActivity(), invite, hash, DialogsActivity.this));
+                        showDialog(new JoinChatAlert(getParentActivity(), invite, hash, DialogsActivity.this));
                         return;
                     } else {
                         if (invite.chat != null) {

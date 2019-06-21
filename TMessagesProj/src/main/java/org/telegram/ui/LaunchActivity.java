@@ -78,7 +78,7 @@ import org.telegram.ui.Components.AudioPlayerAlert;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BlockingUpdateView;
 import org.telegram.ui.Components.EmbedBottomSheet;
-import org.telegram.ui.Components.JoinGroupAlert;
+import org.telegram.ui.Components.JoinChatAlert;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.PasscodeView;
 import org.telegram.ui.Components.PipRoundVideoView;
@@ -1798,10 +1798,10 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                                     actionBarLayout.presentFragment(fragment, false, true, true, false);
                                 }
                             } else {
-                                if ((invite.chat == null && (!invite.channel || invite.megagroup) || invite.chat != null && (!ChatObject.isChannel(invite.chat) || invite.chat.megagroup)) && !mainFragmentsStack.isEmpty()) {
+                                if (!mainFragmentsStack.isEmpty()) {
                                     BaseFragment fragment = mainFragmentsStack.get(mainFragmentsStack.size() - 1);
-                                    fragment.showDialog(new JoinGroupAlert(LaunchActivity.this, invite, group, fragment));
-                                } else {
+                                    fragment.showDialog(new JoinChatAlert(LaunchActivity.this, invite, group, fragment));
+                                } else if (invite.channel) {
                                     AlertDialog.Builder builder = new AlertDialog.Builder(LaunchActivity.this);
                                     builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
                                     builder.setMessage(LocaleController.formatString("ChannelJoinTo", R.string.ChannelJoinTo, invite.chat != null ? invite.chat.title : invite.title));
