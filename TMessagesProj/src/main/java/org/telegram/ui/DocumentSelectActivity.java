@@ -55,7 +55,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class DocumentSelectActivity extends BaseFragment {
 
@@ -75,7 +79,7 @@ public class DocumentSelectActivity extends BaseFragment {
     private LinearLayoutManager layoutManager;
 
     private File currentDir;
-    private Thread loadingThread;
+    private Future<?> loadingTask;
     private ArrayList<ListItem> items = new ArrayList<>();
     private boolean receiverRegistered = false;
     private ArrayList<HistoryEntry> history = new ArrayList<>();
@@ -84,10 +88,12 @@ public class DocumentSelectActivity extends BaseFragment {
     private HashMap<String, ListItem> selectedFiles = new HashMap<>();
     private ArrayList<View> actionModeViews = new ArrayList<>();
     private boolean scrolling;
-    private ArrayList<ListItem> recentItems = new ArrayList<>();
+    private List<ListItem> recentItems = Collections.emptyList();
     private int maxSelectedFiles = -1;
     private boolean canSelectOnlyImageFiles;
     private boolean allowMusic;
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(2);
 
     private final static int done = 3;
 
@@ -99,6 +105,7 @@ public class DocumentSelectActivity extends BaseFragment {
         String thumb;
         File file;
         boolean isDir;
+        long lastModified;
         long date;
     }
 
@@ -150,9 +157,7 @@ public class DocumentSelectActivity extends BaseFragment {
         } catch (Exception e) {
             FileLog.e(e);
         }
-        if (loadingThread != null) {
-            loadingThread.interrupt();
-        }
+        executor.shutdownNow();
         super.onFragmentDestroy();
     }
 
@@ -384,39 +389,67 @@ public class DocumentSelectActivity extends BaseFragment {
     }
 
     public void loadRecentFiles() {
-        try {
-            File[] files = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).listFiles(); //TODO android Q
-            for (int a = 0; a < files.length; a++) {
-                File file = files[a];
-                if (file.isDirectory()) {
-                    continue;
+        executor.submit(() -> {
+            try {
+                File[] files = Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_DOWNLOADS).listFiles(); //TODO android Q
+                ArrayList<ListItem> newRecentItems = new ArrayList<>(files.length);
+                for (int a = 0; a < files.length; a++) {
+                    File file = files[a];
+                    if (file.isDirectory()) {
+                        continue;
+                    }
+                    ListItem item = new ListItem();
+                    item.title = file.getName();
+                    item.file = file;
+                    String fname = file.getName();
+                    String[] sp = fname.split("\\.");
+                    item.ext = sp.length > 1 ? sp[sp.length - 1] : "?";
+                    item.subtitle = AndroidUtilities.formatFileSize(file.length());
+                    item.lastModified = file.lastModified();
+                    fname = fname.toLowerCase();
+                    if (fname.endsWith(".jpg") || fname.endsWith(".png") || fname.endsWith(".gif") || fname.endsWith(".jpeg")) {
+                        item.thumb = file.getAbsolutePath();
+                    }
+                    newRecentItems.add(item);
                 }
-                ListItem item = new ListItem();
-                item.title = file.getName();
-                item.file = file;
-                String fname = file.getName();
-                String[] sp = fname.split("\\.");
-                item.ext = sp.length > 1 ? sp[sp.length - 1] : "?";
-                item.subtitle = AndroidUtilities.formatFileSize(file.length());
-                fname = fname.toLowerCase();
-                if (fname.endsWith(".jpg") || fname.endsWith(".png") || fname.endsWith(".gif") || fname.endsWith(".jpeg")) {
-                    item.thumb = file.getAbsolutePath();
-                }
-                recentItems.add(item);
+                Collections.sort(newRecentItems, (o1, o2) -> {
+                    long lm = o1.lastModified;
+                    long rm = o2.lastModified;
+                    if (lm == rm) {
+                        return 0;
+                    } else if (lm > rm) {
+                        return -1;
+                    } else {
+                        return 1;
+                    }
+                });
+                if (Thread.interrupted()) return;
+                AndroidUtilities.runOnUIThread(() -> {
+                    recentItems = newRecentItems;
+                    if (history.isEmpty()) {
+                        if (isFullyVisible()) {
+                            listAdapter.notifyDataSetChanged();
+                        } else {
+                            notifyAdapterWhenFullyVisible = true;
+                        }
+                    }
+                });
+
+            } catch (Exception e) {
+                FileLog.e(e);
             }
-            Collections.sort(recentItems, (o1, o2) -> {
-                long lm = o1.file.lastModified();
-                long rm = o2.file.lastModified();
-                if (lm == rm) {
-                    return 0;
-                } else if (lm > rm) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            });
-        } catch (Exception e) {
-            FileLog.e(e);
+        });
+    }
+
+    private boolean notifyAdapterWhenFullyVisible;
+
+    @Override
+    protected void onBecomeFullyVisible() {
+        super.onBecomeFullyVisible();
+        if (notifyAdapterWhenFullyVisible) {
+            notifyAdapterWhenFullyVisible = false;
+            listAdapter.notifyDataSetChanged();
         }
     }
 
@@ -487,7 +520,7 @@ public class DocumentSelectActivity extends BaseFragment {
     }
 
     private void listFiles(File dir, Consumer<Boolean> onResult) {
-        if (loadingThread != null) loadingThread.interrupt();
+        if (loadingTask != null) loadingTask.cancel(true);
         if (!dir.canRead()) {
             if (dir.getAbsolutePath().startsWith(Environment.getExternalStorageDirectory().toString())
                     || dir.getAbsolutePath().startsWith("/sdcard")
@@ -515,11 +548,11 @@ public class DocumentSelectActivity extends BaseFragment {
         }
         AlertDialog progressDialog = new AlertDialog(getParentActivity(), 3);
         progressDialog.setOnCancelListener(dialog -> {
-            loadingThread.interrupt();
+            loadingTask.cancel(true);
             onResult.accept(false);
         });
         progressDialog.show();
-        loadingThread = new Thread(() -> {
+        loadingTask = executor.submit(() -> {
             File[] files;
             try {
                 files = dir.listFiles();
@@ -607,7 +640,6 @@ public class DocumentSelectActivity extends BaseFragment {
                 }
             });
         });
-        loadingThread.start();
     }
 
     private void showErrorBox(String error) {
@@ -619,7 +651,7 @@ public class DocumentSelectActivity extends BaseFragment {
 
     @SuppressLint("NewApi")
     private void listRoots() {
-        if (loadingThread != null) loadingThread.interrupt();
+        if (loadingTask != null) loadingTask.cancel(true);
         currentDir = null;
         items.clear();
 
