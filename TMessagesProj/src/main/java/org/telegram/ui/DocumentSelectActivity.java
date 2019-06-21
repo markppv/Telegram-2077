@@ -90,6 +90,7 @@ public class DocumentSelectActivity extends BaseFragment {
     private boolean scrolling;
     private List<ListItem> recentItems = Collections.emptyList();
     private int maxSelectedFiles = -1;
+    private boolean notifyAdapterWhenFullyVisible;
     private boolean canSelectOnlyImageFiles;
     private boolean allowMusic;
 
@@ -441,8 +442,6 @@ public class DocumentSelectActivity extends BaseFragment {
             }
         });
     }
-
-    private boolean notifyAdapterWhenFullyVisible;
 
     @Override
     protected void onBecomeFullyVisible() {
