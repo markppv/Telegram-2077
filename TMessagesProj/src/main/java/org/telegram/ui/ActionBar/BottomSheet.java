@@ -548,11 +548,7 @@ public class BottomSheet extends Dialog {
         touchSlop = vc.getScaledTouchSlop();
 
         Rect padding = new Rect();
-        if (backgroundType == 0) {
-            shadowDrawable = context.getResources().getDrawable(R.drawable.sheet_shadow).mutate();
-        } else if (backgroundType == 1) {
-            shadowDrawable = context.getResources().getDrawable(R.drawable.sheet_shadow_round).mutate();
-        }
+        shadowDrawable = context.getResources().getDrawable(R.drawable.sheet_shadow_round).mutate();
         shadowDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogBackground), PorterDuff.Mode.MULTIPLY));
         shadowDrawable.getPadding(padding);
         backgroundPaddingLeft = padding.left;
