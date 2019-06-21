@@ -44,11 +44,13 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
-
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
@@ -58,24 +60,25 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.FileLoader;
-import org.telegram.messenger.LocationController;
-import org.telegram.messenger.MessagesStorage;
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.LocationController;
+import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
+import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.LocationActivityAdapter;
@@ -87,7 +90,6 @@ import org.telegram.ui.Cells.LocationPoweredCell;
 import org.telegram.ui.Cells.SendLocationCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AvatarDrawable;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.EmptyTextProgressView;
 import org.telegram.ui.Components.LayoutHelper;
@@ -98,9 +100,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 public class LocationActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
@@ -129,6 +128,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     private ActionBarMenuItem otherItem;
 
     private boolean checkGpsEnabled = true;
+    private boolean initMapsOnFullyVisible;
 
     private boolean isFirstLocation = true;
     private long dialogId;
@@ -224,6 +224,15 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         if (updateRunnable != null) {
             AndroidUtilities.cancelRunOnUIThread(updateRunnable);
             updateRunnable = null;
+        }
+    }
+
+    @Override
+    protected void onBecomeFullyVisible() {
+        super.onBecomeFullyVisible();
+        if (initMapsOnFullyVisible) {
+            initMapsOnFullyVisible = false;
+            initMaps();
         }
     }
 
@@ -533,21 +542,8 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             }
             AndroidUtilities.runOnUIThread(() -> {
                 if (mapView != null && getParentActivity() != null) {
-                    try {
-                        map.onCreate(null);
-                        MapsInitializer.initialize(ApplicationLoader.applicationContext);
-                        mapView.getMapAsync(map1 -> {
-                            googleMap = map1;
-                            googleMap.setPadding(AndroidUtilities.dp(70), 0, AndroidUtilities.dp(70), AndroidUtilities.dp(10));
-                            onMapInit();
-                        });
-                        mapsInitialized = true;
-                        if (onResumeCalled) {
-                            mapView.onResume();
-                        }
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
+                    if (isFullyVisible()) initMaps();
+                    else initMapsOnFullyVisible = true;
                 }
             });
         }).start();
@@ -682,6 +678,24 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         frameLayout.addView(actionBar);
 
         return fragmentView;
+    }
+
+    private void initMaps() {
+        try {
+            mapView.onCreate(null);
+            MapsInitializer.initialize(ApplicationLoader.applicationContext);
+            mapView.getMapAsync(map1 -> {
+                googleMap = map1;
+                googleMap.setPadding(AndroidUtilities.dp(70), 0, AndroidUtilities.dp(70), AndroidUtilities.dp(10));
+                onMapInit();
+            });
+            mapsInitialized = true;
+            if (onResumeCalled) {
+                mapView.onResume();
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
     }
 
     private Bitmap createUserBitmap(LiveLocation liveLocation) {
