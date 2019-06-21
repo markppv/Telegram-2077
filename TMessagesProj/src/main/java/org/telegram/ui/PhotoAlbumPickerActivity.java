@@ -19,12 +19,15 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -40,9 +43,6 @@ import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 public class PhotoAlbumPickerActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
@@ -73,6 +73,7 @@ public class PhotoAlbumPickerActivity extends BaseFragment implements Notificati
     private boolean allowSearchImages = true;
     private boolean allowGifs;
     private boolean allowCaption;
+    private boolean notifyAdapterWhenFullyVisible;
     private ChatActivity chatActivity;
     private int maxSelectedPhotos;
 
@@ -102,6 +103,19 @@ public class PhotoAlbumPickerActivity extends BaseFragment implements Notificati
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.recentImagesDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.closeChats);
         super.onFragmentDestroy();
+    }
+
+    @Override
+    protected void onBecomeFullyVisible() {
+        super.onBecomeFullyVisible();
+        if (notifyAdapterWhenFullyVisible) {
+            notifyAdapterWhenFullyVisible = false;
+            progressView.setVisibility(View.GONE);
+            if (listView.getEmptyView() == null) {
+                listView.setEmptyView(emptyView);
+            }
+            listAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -233,14 +247,14 @@ public class PhotoAlbumPickerActivity extends BaseFragment implements Notificati
                 } else {
                     albumsSorted = (ArrayList<MediaController.AlbumEntry>) args[1];
                 }
-                if (progressView != null) {
+                if (isFullyVisible()) {
                     progressView.setVisibility(View.GONE);
-                }
-                if (listView != null && listView.getEmptyView() == null) {
-                    listView.setEmptyView(emptyView);
-                }
-                if (listAdapter != null) {
+                    if (listView.getEmptyView() == null) {
+                        listView.setEmptyView(emptyView);
+                    }
                     listAdapter.notifyDataSetChanged();
+                } else {
+                    notifyAdapterWhenFullyVisible = true;
                 }
                 loading = false;
             }
