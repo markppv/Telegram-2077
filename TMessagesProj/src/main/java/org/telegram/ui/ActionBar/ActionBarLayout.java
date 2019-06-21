@@ -25,11 +25,14 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MotionEvent;
+import android.view.PixelCopy;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +49,7 @@ import androidx.appcompat.widget.AppCompatImageView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
@@ -56,9 +60,13 @@ public class ActionBarLayout extends FrameLayout {
 
     public interface ActionBarLayoutDelegate {
         boolean onPreIme();
+
         boolean needPresentFragment(BaseFragment fragment, boolean removeLast, boolean forceWithoutAnimation, ActionBarLayout layout);
+
         boolean needAddFragmentToStack(BaseFragment fragment, ActionBarLayout layout);
+
         boolean needCloseLastFragment(ActionBarLayout layout);
+
         void onRebuildAllFragments(ActionBarLayout layout, boolean last);
     }
 
@@ -361,7 +369,7 @@ public class ActionBarLayout extends FrameLayout {
                 layerShadowDrawable.setAlpha((int) (0xff * alpha));
                 layerShadowDrawable.draw(canvas);
             } else if (child == containerViewBack) {
-                float opacity = Math.min(0.8f, (width - translationX) / (float)width);
+                float opacity = Math.min(0.8f, (width - translationX) / (float) width);
                 if (opacity < 0) {
                     opacity = 0;
                 }
@@ -1322,7 +1330,8 @@ public class ActionBarLayout extends FrameLayout {
         return themeAnimationValue;
     }
 
-    public void animateThemedValues(Theme.ThemeInfo theme, boolean nightTheme) {
+    public void animateThemedValues(Theme.ThemeInfo theme, boolean nightTheme,
+                                    boolean withThemeTransitionView) {
         if (transitionAnimationInProgress || startedTracking) {
             animateThemeAfterAnimation = true;
             animateSetThemeAfterAnimation = theme;
@@ -1333,8 +1342,9 @@ public class ActionBarLayout extends FrameLayout {
             themeAnimatorSet.cancel();
             themeAnimatorSet = null;
         }
-        boolean startAnimation = false;
-        for (int i = 0; i < 1 /* todo 2 */; i++) {
+        boolean hasFragments = false;
+        boolean dontStartAnimation = false;
+        for (int i = 0; i < 2; i++) {
             BaseFragment fragment;
             if (i == 0) {
                 fragment = getLastFragment();
@@ -1349,7 +1359,7 @@ public class ActionBarLayout extends FrameLayout {
                 fragment = fragmentsStack.get(fragmentsStack.size() - 2);
             }
             if (fragment != null) {
-                startAnimation = true;
+                hasFragments = true;
                 themeAnimatorDescriptions[i] = fragment.getThemeDescriptions();
                 animateStartColors[i] = new int[themeAnimatorDescriptions[i].length];
                 for (int a = 0; a < themeAnimatorDescriptions[i].length; a++) {
@@ -1360,38 +1370,86 @@ public class ActionBarLayout extends FrameLayout {
                     }
                 }
                 if (i == 0) {
-                    Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
-                            Bitmap.Config.ARGB_8888);
-                    bitmap.setHasAlpha(false);
-                    Canvas canvas = new Canvas(bitmap);
-                    draw(canvas);
+                    if (withThemeTransitionView) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            dontStartAnimation = true;
+                            final HandlerThread handlerThread = new HandlerThread("PixelCopy");
+                            handlerThread.start();
+                            Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
+                                    Bitmap.Config.ARGB_8888);
+                            int[] viewCoords = new int[2];
+                            getLocationInWindow(viewCoords);
+                            Rect viewRect = new Rect(
+                                    viewCoords[0], viewCoords[1],
+                                    viewCoords[0] + getWidth(),
+                                    viewCoords[1] + getHeight());
+                            int actionBarColor = Theme.getColor(Theme.key_actionBarDefault);
+                            themeTransitionView.setVisibility(VISIBLE);
+                            themeTransitionView.bringToFront();
+                            int index = i;
+                            PixelCopy.request(parentActivity.getWindow(), viewRect, bitmap, copyResult -> {
+                                if (copyResult == PixelCopy.SUCCESS) {
+                                    Canvas canvas = new Canvas(bitmap);
+                                    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                                    paint.setColor(actionBarColor);
+                                    canvas.drawRect(0, 0, getWidth(), AndroidUtilities.statusBarHeight, paint);
+                                    themeTransitionView.post(() -> {
+                                        themeTransitionView.setImageBitmap(bitmap);
+                                        applyThemeAndSetAnimateEndColors(theme, nightTheme, index);
+                                        NotificationCenter.getGlobalInstance().postNotificationName(
+                                                NotificationCenter.themeTransitionViewPrepared);
+                                        startAnimation(true);
+                                    });
+                                } else {
+                                    themeTransitionView.post(() -> {
+                                        themeTransitionView.setVisibility(GONE);
+                                        applyThemeAndSetAnimateEndColors(theme, nightTheme, index);
+                                        NotificationCenter.getGlobalInstance().postNotificationName(
+                                                NotificationCenter.themeTransitionViewPrepared);
+                                        startAnimation(true);
+                                    });
+                                }
+                                handlerThread.quitSafely();
+                            }, new Handler(handlerThread.getLooper()));
+                        } else {
+                            Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(),
+                                    Bitmap.Config.ARGB_8888);
+                            bitmap.setHasAlpha(false);
+                            Canvas canvas = new Canvas(bitmap);
+                            draw(canvas);
 
-                    themeTransitionView.setImageBitmap(bitmap);
-                    themeTransitionView.setVisibility(VISIBLE);
-                    themeTransitionView.bringToFront();
+                            themeTransitionView.setImageBitmap(bitmap);
+                            themeTransitionView.setVisibility(VISIBLE);
+                            themeTransitionView.bringToFront();
 
-                    Theme.applyTheme(theme, nightTheme);
+                            applyThemeAndSetAnimateEndColors(theme, nightTheme, i);
+
+                            NotificationCenter.getGlobalInstance().postNotificationName(
+                                    NotificationCenter.themeTransitionViewPrepared);
+                        }
+                    } else applyThemeAndSetAnimateEndColors(theme, nightTheme, i);
                 }
-                animateEndColors[i] = new int[themeAnimatorDescriptions[i].length];
-                for (int a = 0; a < themeAnimatorDescriptions[i].length; a++) {
-                    animateEndColors[i][a] = themeAnimatorDescriptions[i][a].getSetColor();
-                }
+                setAnimateEndColors(i);
             }
         }
-        if (startAnimation) {
-            themeAnimatorSet = new AnimatorSet();
-            themeAnimatorSet.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    if (animation.equals(themeAnimatorSet)) {
-                        for (int a = 0; a < 2; a++) {
-                            themeAnimatorDescriptions[a] = null;
-                            animateStartColors[a] = null;
-                            animateEndColors[a] = null;
-                            themeAnimatorDelegate[a] = null;
-                        }
-                        Theme.setAnimatingColor(false);
-                        themeAnimatorSet = null;
+        if (hasFragments && !dontStartAnimation) startAnimation(withThemeTransitionView);
+    }
+
+    private void startAnimation(boolean withThemeTransitionView) {
+        themeAnimatorSet = new AnimatorSet();
+        themeAnimatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (animation.equals(themeAnimatorSet)) {
+                    for (int a = 0; a < 2; a++) {
+                        themeAnimatorDescriptions[a] = null;
+                        animateStartColors[a] = null;
+                        animateEndColors[a] = null;
+                        themeAnimatorDelegate[a] = null;
+                    }
+                    Theme.setAnimatingColor(false);
+                    themeAnimatorSet = null;
+                    if (withThemeTransitionView) {
                         themeTransitionView.animate()
                                 .alpha(0f)
                                 .setDuration(200)
@@ -1404,17 +1462,29 @@ public class ActionBarLayout extends FrameLayout {
                                 .start();
                     }
                 }
-            });
-            int count = fragmentsStack.size() - (inPreviewMode || transitionAnimationPreviewMode ? 2 : 1);
-            for (int a = 0; a < count; a++) {
-                BaseFragment fragment = fragmentsStack.get(a);
-                fragment.clearViews();
-                fragment.setParentLayout(this);
             }
-            Theme.setAnimatingColor(true);
-            themeAnimatorSet.playTogether(ObjectAnimator.ofFloat(this, "themeAnimationValue", 0.0f, 1.0f));
-            themeAnimatorSet.setDuration(0);
-            themeAnimatorSet.start();
+        });
+        int count = fragmentsStack.size() - (inPreviewMode || transitionAnimationPreviewMode ? 2 : 1);
+        for (int a = 0; a < count; a++) {
+            BaseFragment fragment = fragmentsStack.get(a);
+            fragment.clearViews();
+            fragment.setParentLayout(this);
+        }
+        Theme.setAnimatingColor(true);
+        themeAnimatorSet.playTogether(ObjectAnimator.ofFloat(this, "themeAnimationValue", 0.0f, 1.0f));
+        themeAnimatorSet.setDuration(withThemeTransitionView ? 0 : 200);
+        themeAnimatorSet.start();
+    }
+
+    private void applyThemeAndSetAnimateEndColors(Theme.ThemeInfo theme, boolean nightTheme, int i) {
+        Theme.applyTheme(theme, nightTheme);
+        setAnimateEndColors(i);
+    }
+
+    private void setAnimateEndColors(int i) {
+        animateEndColors[i] = new int[themeAnimatorDescriptions[i].length];
+        for (int a = 0; a < themeAnimatorDescriptions[i].length; a++) {
+            animateEndColors[i][a] = themeAnimatorDescriptions[i][a].getSetColor();
         }
     }
 
@@ -1481,7 +1551,7 @@ public class ActionBarLayout extends FrameLayout {
             rebuildAllFragmentViews(rebuildLastAfterAnimation, showLastAfterAnimation);
             rebuildAfterAnimation = false;
         } else if (animateThemeAfterAnimation) {
-            animateThemedValues(animateSetThemeAfterAnimation, animateSetThemeNightAfterAnimation);
+            animateThemedValues(animateSetThemeAfterAnimation, animateSetThemeNightAfterAnimation, false);
             animateSetThemeAfterAnimation = null;
             animateThemeAfterAnimation = false;
         }

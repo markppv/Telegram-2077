@@ -8,8 +8,9 @@
 
 package org.telegram.messenger;
 
-import androidx.annotation.UiThread;
 import android.util.SparseArray;
+
+import androidx.annotation.UiThread;
 
 import java.util.ArrayList;
 
@@ -160,6 +161,7 @@ public class NotificationCenter {
     public static final int notificationsCountUpdated = totalEvents++;
     public static final int playerDidStartPlaying = totalEvents++;
     public static final int closeSearchByActiveAction = totalEvents++;
+    public static final int themeTransitionViewPrepared = totalEvents++;
 
     private SparseArray<ArrayList<Object>> observers = new SparseArray<>();
     private SparseArray<ArrayList<Object>> removeAfterBroadcast = new SparseArray<>();

@@ -624,6 +624,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.locationPermissionGranted);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didSetNewWallpapper);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.themeListUpdated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.themeTransitionViewPrepared);
         return super.onFragmentCreate();
     }
 
@@ -634,6 +635,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.locationPermissionGranted);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didSetNewWallpapper);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.themeListUpdated);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.themeTransitionViewPrepared);
         Theme.saveAutoNightThemeConfig();
     }
 
@@ -647,6 +649,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             }
         } else if (id == NotificationCenter.themeListUpdated) {
             updateRows();
+        } else if (id == NotificationCenter.themeTransitionViewPrepared) {
+            updateCurrentThemeChecks();
         }
     }
 
@@ -849,7 +853,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         if (themeInfo == Theme.getCurrentTheme()) {
                             return;
                         }
-                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false);
+                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, false);
                     } else {
                         Theme.setCurrentNightTheme(themeInfo);
                     }
@@ -1540,15 +1544,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         if (themeInfo == Theme.getCurrentTheme()) {
                             return;
                         }
-                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false);
-
-                        int count = innerListView.getChildCount();
-                        for (int a = 0; a < count; a++) {
-                            View child = innerListView.getChildAt(a);
-                            if (child instanceof InnerThemeView) {
-                                ((InnerThemeView) child).updateCurrentThemeCheck();
-                            }
-                        }
+                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, true);
                     });
                     horizontalListView.setOnItemLongClickListener((view12, position) -> {
                         InnerThemeView innerThemeView = (InnerThemeView) view12;
@@ -1770,6 +1766,18 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 return 11;
             }
             return 0;
+        }
+    }
+
+    private void updateCurrentThemeChecks() {
+        if (innerListView != null) {
+            int count = innerListView.getChildCount();
+            for (int a = 0; a < count; a++) {
+                View child = innerListView.getChildAt(a);
+                if (child instanceof InnerThemeView) {
+                    ((InnerThemeView) child).updateCurrentThemeCheck();
+                }
+            }
         }
     }
 
