@@ -2818,12 +2818,12 @@ public class Theme {
         if (night) {
             if (currentTheme != currentNightTheme) {
                 lastThemeSwitchTime = SystemClock.elapsedRealtime();
-                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, currentNightTheme, true);
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, currentNightTheme, true, false);
             }
         } else {
             if (currentTheme != currentDayTheme) {
                 lastThemeSwitchTime = SystemClock.elapsedRealtime();
-                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, currentDayTheme, true);
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, currentDayTheme, true, false);
             }
         }
     }
