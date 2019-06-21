@@ -36,6 +36,7 @@ public class BaseFragment {
 
     private boolean isFinished;
     private boolean finishing;
+    private boolean isFullyVisible;
     protected Dialog visibleDialog;
     protected int currentAccount = UserConfig.selectedAccount;
 
@@ -346,14 +347,17 @@ public class BaseFragment {
     }
 
     protected void onTransitionAnimationStart(boolean isOpen, boolean backward) {
-
     }
 
     protected void onTransitionAnimationEnd(boolean isOpen, boolean backward) {
+    }
 
+    public boolean isFullyVisible() {
+        return isFullyVisible;
     }
 
     protected void onBecomeFullyVisible() {
+        isFullyVisible = true;
         AccessibilityManager mgr = (AccessibilityManager) ApplicationLoader.applicationContext.getSystemService(Context.ACCESSIBILITY_SERVICE);
         if (mgr.isEnabled()) {
             ActionBar actionBar = getActionBar();
@@ -367,7 +371,7 @@ public class BaseFragment {
     }
 
     protected void onBecomeFullyHidden() {
-
+        isFullyVisible = false;
     }
 
     protected AnimatorSet onCustomTransitionAnimation(boolean isOpen, final Runnable callback) {
