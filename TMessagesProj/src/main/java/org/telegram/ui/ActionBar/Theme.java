@@ -2828,6 +2828,14 @@ public class Theme {
         }
     }
 
+    public static void renameTheme(ThemeInfo themeInfo, String name) {
+        themesDict.remove(themeInfo.name);
+        themesDict.put(name, themeInfo);
+        themeInfo.name = name;
+        saveOtherThemes();
+        sortThemes();
+    }
+
     public static boolean deleteTheme(ThemeInfo themeInfo) {
         if (themeInfo.pathToFile == null) {
             return false;
