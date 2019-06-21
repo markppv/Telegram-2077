@@ -418,7 +418,7 @@ public class UserCell extends FrameLayout {
             avatarImageView.setImage(ImageLocation.getForUser(currentUser, false), "50_50", avatarDrawable, currentUser);
         } else if (currentChat != null) {
             avatarImageView.setImage(ImageLocation.getForChat(currentChat, false), "50_50", avatarDrawable, currentChat);
-        }
+        } else avatarImageView.setImageDrawable(avatarDrawable);
     }
 
     @Override
