@@ -14,6 +14,8 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.StateListAnimator;
 import android.annotation.SuppressLint;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -493,6 +495,30 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                         } catch (Exception e) {
                             FileLog.e(e);
                         }
+                    }
+                    return true;
+                } else if (position == numberRow || position == usernameRow || position == bioRow) {
+                    try {
+                        String clipText = "";
+                        if (position == numberRow) {
+                            clipText = "+" + userInfo.user.phone;
+                        } else if (position == usernameRow) {
+                            if (TextUtils.isEmpty(userInfo.user.username)) {
+                                return false;
+                            }
+                            clipText = "@" + userInfo.user.username;
+                        } else if (position == bioRow) {
+                            if (TextUtils.isEmpty(userInfo.about)) {
+                                return false;
+                            }
+                            clipText = userInfo.about;
+                        }
+                        ClipboardManager clipboard = (ClipboardManager) ApplicationLoader
+                                .applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
+                        clipboard.setPrimaryClip(ClipData.newPlainText("label", clipText));
+                        Toast.makeText(getParentActivity(), LocaleController.getString("TextCopied", R.string.TextCopied), Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        FileLog.e(e);
                     }
                     return true;
                 }
