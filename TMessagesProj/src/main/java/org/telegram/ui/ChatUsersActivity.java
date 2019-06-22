@@ -386,14 +386,18 @@ public class ChatUsersActivity extends BaseFragment implements NotificationCente
                     searchListViewAdapter.searchDialogs(null);
                     searching = false;
                     searchWas = false;
+                    showAll();
+                    if (doneItem != null) {
+                        doneItem.setVisibility(View.VISIBLE);
+                    }
+                }
+
+                private void showAll() {
                     listView.setAdapter(listViewAdapter);
                     listViewAdapter.notifyDataSetChanged();
                     listView.setFastScrollVisible(true);
                     listView.setVerticalScrollBarEnabled(false);
                     emptyView.setShowAtCenter(false);
-                    if (doneItem != null) {
-                        doneItem.setVisibility(View.VISIBLE);
-                    }
                 }
 
                 @Override
@@ -405,13 +409,14 @@ public class ChatUsersActivity extends BaseFragment implements NotificationCente
                     if (text.length() != 0) {
                         searchWas = true;
                         if (listView != null && listView.getAdapter() != searchListViewAdapter) {
+                            emptyView.setShowAtCenter(true);
                             listView.setAdapter(searchListViewAdapter);
                             searchListViewAdapter.notifyDataSetChanged();
                             listView.setFastScrollVisible(false);
                             listView.setVerticalScrollBarEnabled(true);
                         }
-                    }
-                    searchListViewAdapter.searchDialogs(text);
+                        searchListViewAdapter.searchDialogs(text);
+                    } else showAll();
                 }
             });
             if (type == TYPE_KICKED) {

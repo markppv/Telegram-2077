@@ -237,13 +237,7 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
                 searchListViewAdapter.searchDialogs(null);
                 searching = false;
                 searchWas = false;
-                listView.setAdapter(listViewAdapter);
-                listView.setSectionsType(1);
-                listViewAdapter.notifyDataSetChanged();
-                listView.setFastScrollVisible(true);
-                listView.setVerticalScrollBarEnabled(false);
-                listView.setEmptyView(null);
-                emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
+                showAll();
                 if (floatingButtonContainer != null) {
                     floatingButtonContainer.setVisibility(View.VISIBLE);
                     floatingHidden = true;
@@ -274,8 +268,18 @@ public class ContactsActivity extends BaseFragment implements NotificationCenter
                         listView.setEmptyView(emptyView);
                         emptyView.setText(LocaleController.getString("NoResult", R.string.NoResult));
                     }
-                }
-                searchListViewAdapter.searchDialogs(text);
+                    searchListViewAdapter.searchDialogs(text);
+                } else showAll();
+            }
+
+            private void showAll() {
+                listView.setAdapter(listViewAdapter);
+                listView.setSectionsType(1);
+                listViewAdapter.notifyDataSetChanged();
+                listView.setFastScrollVisible(true);
+                listView.setVerticalScrollBarEnabled(false);
+                listView.setEmptyView(null);
+                emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
             }
         });
         item.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));
