@@ -90,7 +90,7 @@ public class ActionBarPopupWindow extends PopupWindow {
             super(context);
 
             backgroundDrawable = getResources().getDrawable(R.drawable.popup_fixed_alert2).mutate();
-            backgroundDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), PorterDuff.Mode.MULTIPLY));
+            setBackgroundColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground));
 
             setPadding(AndroidUtilities.dp(8), AndroidUtilities.dp(8), AndroidUtilities.dp(8), AndroidUtilities.dp(8));
             setWillNotDraw(false);
@@ -119,6 +119,11 @@ public class ActionBarPopupWindow extends PopupWindow {
 
         public void setDispatchKeyEventListener(OnDispatchKeyEventListener listener) {
             mOnDispatchKeyEventListener = listener;
+        }
+
+        @Override
+        public void setBackgroundColor(int color) {
+            backgroundDrawable.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.MULTIPLY));
         }
 
         @Keep
