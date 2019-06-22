@@ -682,6 +682,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     holder = findViewHolderForAdapterPosition(sharedSectionRow);
                 } else if (membersSectionRow != -1 && (sharedSectionRow == -1 || membersSectionRow > sharedSectionRow)) {
                     holder = findViewHolderForAdapterPosition(membersSectionRow);
+                } else if (settingsSectionRow != -1) {
+                    holder = findViewHolderForAdapterPosition(settingsSectionRow);
                 } else if (infoSectionRow != -1) {
                     holder = findViewHolderForAdapterPosition(infoSectionRow);
                 } else {
@@ -3127,7 +3129,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         } else {
                             value = LocaleController.formatTTLString(encryptedChat.ttl);
                         }
-                        textCell.setTextAndValue(LocaleController.getString("MessageLifetime", R.string.MessageLifetime), value, false);
+                        textCell.setTextAndValue(LocaleController.getString("MessageLifetime", R.string.MessageLifetime), value, true);
                     } else if (position == unblockRow) {
                         textCell.setText(LocaleController.getString("Unblock", R.string.Unblock), false);
                         textCell.setColors(null, Theme.key_windowBackgroundWhiteRedText5);
