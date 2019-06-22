@@ -24,6 +24,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
@@ -222,6 +223,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private RadialProgressView miniProgressView;
     private ImageView paintItem;
     private ImageView cropItem;
+    private ImageView backItem;
     private ImageView rotateItem;
     private ImageView cameraItem;
     private ImageView tuneItem;
@@ -2566,7 +2568,18 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
         LinearLayout itemsLayout = new LinearLayout(parentActivity);
         itemsLayout.setOrientation(LinearLayout.HORIZONTAL);
-        pickerView.addView(itemsLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 48, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM, 0, 0, 34, 0));
+        itemsLayout.setBackgroundColor(Color.BLACK);
+        itemsLayout.setGravity(Gravity.CENTER);
+        itemsLayout.setPadding(0, 0, AndroidUtilities.dp(70), 0);
+        pickerView.addView(itemsLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM, 0, 0, 0, 0));
+
+        backItem = new ImageView(parentActivity);
+        backItem.setScaleType(ImageView.ScaleType.CENTER);
+        backItem.setImageResource(R.drawable.ic_ab_back);
+        backItem.setBackgroundDrawable(Theme.createSelectorDrawable(Theme.ACTION_BAR_WHITE_SELECTOR_COLOR));
+        itemsLayout.addView(backItem, LayoutHelper.createLinear(70, 48));
+        backItem.setOnClickListener(v -> closePhoto(true, false));
+        backItem.setContentDescription(LocaleController.getString("Back", R.string.Back));
 
         cropItem = new ImageView(parentActivity);
         cropItem.setScaleType(ImageView.ScaleType.CENTER);
@@ -5210,6 +5223,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         pickerView.setTranslationY(0);
 
         paintItem.setVisibility(View.GONE);
+        backItem.setVisibility(View.GONE);
         cropItem.setVisibility(View.GONE);
         tuneItem.setVisibility(View.GONE);
         timeItem.setVisibility(View.GONE);
@@ -5351,6 +5365,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             boolean allowCaption;
             if (obj instanceof MediaController.PhotoEntry) {
                 if (((MediaController.PhotoEntry) obj).isVideo) {
+                    backItem.setVisibility(View.GONE);
                     cropItem.setVisibility(View.GONE);
                     rotateItem.setVisibility(View.GONE);
                     bottomLayout.setVisibility(View.VISIBLE);
@@ -5359,15 +5374,18 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 } else {
                     cropItem.setVisibility(sendPhotoType != SELECT_TYPE_AVATAR ? View.VISIBLE : View.GONE);
                     rotateItem.setVisibility(sendPhotoType != SELECT_TYPE_AVATAR ? View.GONE : View.VISIBLE);
+                    backItem.setVisibility(sendPhotoType != SELECT_TYPE_AVATAR ? View.GONE : View.VISIBLE);
                 }
                 allowCaption = true;
             } else if (obj instanceof TLRPC.BotInlineResult) {
                 cropItem.setVisibility(View.GONE);
                 rotateItem.setVisibility(View.GONE);
+                backItem.setVisibility(View.GONE);
                 allowCaption = false;
             } else {
                 cropItem.setVisibility(obj instanceof MediaController.SearchImage && ((MediaController.SearchImage) obj).type == 0 ? View.VISIBLE : View.GONE);
                 rotateItem.setVisibility(View.GONE);
+                backItem.setVisibility(View.GONE);
                 allowCaption = cropItem.getVisibility() == View.VISIBLE;
             }
             if (parentChatActivity != null && (parentChatActivity.currentEncryptedChat == null || AndroidUtilities.getPeerLayerVersion(parentChatActivity.currentEncryptedChat.layer) >= 46)) {
@@ -5689,6 +5707,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     cropItem.setVisibility(View.GONE);
                     tuneItem.setVisibility(View.GONE);
                     rotateItem.setVisibility(View.GONE);
+                    backItem.setVisibility(View.GONE);
                 } else {
                     videoTimelineView.setVisibility(View.GONE);
                     muteItem.setVisibility(View.GONE);
@@ -5699,6 +5718,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         paintItem.setVisibility(View.GONE);
                         cropItem.setVisibility(View.GONE);
                         rotateItem.setVisibility(View.GONE);
+                        backItem.setVisibility(View.GONE);
                         tuneItem.setVisibility(View.GONE);
                     } else {
                         if (sendPhotoType == 4 || sendPhotoType == 5) {
@@ -5710,6 +5730,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         }
                         cropItem.setVisibility(sendPhotoType != SELECT_TYPE_AVATAR ? View.VISIBLE : View.GONE);
                         rotateItem.setVisibility(sendPhotoType != SELECT_TYPE_AVATAR ? View.GONE : View.VISIBLE);
+                        backItem.setVisibility(sendPhotoType != SELECT_TYPE_AVATAR ? View.GONE : View.VISIBLE);
                     }
                     actionBar.setSubtitle(null);
                 }
