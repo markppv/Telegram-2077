@@ -577,6 +577,9 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             searchListView.setVisibility(View.GONE);
             searchListView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
             searchListView.setAdapter(searchAdapter = new LocationActivitySearchAdapter(context));
+            searchAdapter.setDelegate(dialogId, places -> {
+                if (places.isEmpty() && emptyView != null) emptyView.showTextView();
+            });
             frameLayout.addView(searchListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
             searchListView.setOnScrollListener(new RecyclerView.OnScrollListener() {
                 @Override
