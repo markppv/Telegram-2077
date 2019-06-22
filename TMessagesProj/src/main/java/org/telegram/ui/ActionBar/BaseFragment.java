@@ -15,14 +15,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityManager;
-
-import androidx.core.util.Consumer;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.ApplicationLoader;
@@ -54,6 +51,7 @@ public class BaseFragment {
     protected Bundle arguments;
     protected boolean swipeBackEnabled = true;
     protected boolean hasOwnBackground = false;
+    protected int openAnimationDelay;
 
     private final List<Runnable> fullyVisibleActions = new ArrayList<>();
 
@@ -231,8 +229,12 @@ public class BaseFragment {
         }
     }
 
-    public boolean needDelayOpenAnimation() {
-        return false;
+    public int getOpenAnimationDelay() {
+        return openAnimationDelay;
+    }
+
+    public void setOpenAnimationDelay(int openAnimationDelay) {
+        this.openAnimationDelay = openAnimationDelay;
     }
 
     public void onResume() {

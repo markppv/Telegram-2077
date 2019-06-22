@@ -906,7 +906,7 @@ public class ActionBarLayout extends FrameLayout {
                             }
                         };
                         AndroidUtilities.runOnUIThread(waitingForKeyboardCloseRunnable, 200);
-                    } else if (fragment.needDelayOpenAnimation()) {
+                    } else if (fragment.getOpenAnimationDelay() > 0) {
                         delayedOpenAnimationRunnable = new Runnable() {
                             @Override
                             public void run() {
@@ -917,7 +917,8 @@ public class ActionBarLayout extends FrameLayout {
                                 startLayoutAnimation(true, true, preview);
                             }
                         };
-                        AndroidUtilities.runOnUIThread(delayedOpenAnimationRunnable, 200);
+                        AndroidUtilities.runOnUIThread(delayedOpenAnimationRunnable,
+                                fragment.getOpenAnimationDelay());
                     } else {
                         startLayoutAnimation(true, true, preview);
                     }
@@ -1410,9 +1411,7 @@ public class ActionBarLayout extends FrameLayout {
             return;
         }
         int size = fragmentsStack.size();
-        if (!last) {
-            size--;
-        }
+        if (!last) size--;
         if (inPreviewMode) {
             size--;
         }

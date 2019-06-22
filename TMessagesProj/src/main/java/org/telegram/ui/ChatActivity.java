@@ -10573,8 +10573,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     @Override
-    public boolean needDelayOpenAnimation() {
-        return firstLoading;
+    public int getOpenAnimationDelay() {
+        return Math.max(firstLoading ? 200 : 0, openAnimationDelay);
     }
 
     @Override
