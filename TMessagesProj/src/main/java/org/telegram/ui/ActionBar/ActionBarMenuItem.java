@@ -35,6 +35,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.arch.core.util.Function;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -73,6 +75,8 @@ public class ActionBarMenuItem extends FrameLayout {
     public interface ActionBarMenuItemDelegate {
         void onItemClick(int id);
     }
+    private final Function<Context, ActionBarMenuSubItem> defaultSubItemFactory =
+            context -> new ActionBarMenuSubItem(context);
 
     private ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout;
     private ActionBarMenu parentMenu;
@@ -239,6 +243,10 @@ public class ActionBarMenuItem extends FrameLayout {
         });
     }
 
+    public void setPopupLayoutBackgroundColor(int color) {
+        if (popupLayout != null) popupLayout.setBackgroundColor(color);
+    }
+
     public void addSubItem(View view, int width, int height) {
         createPopupLayout();
         popupLayout.addView(view, new LinearLayout.LayoutParams(width, height));
@@ -308,9 +316,14 @@ public class ActionBarMenuItem extends FrameLayout {
     }
 
     public ActionBarMenuSubItem addSubItem(int id, int icon, CharSequence text) {
+        return addSubItem(id, icon, text, defaultSubItemFactory);
+    }
+
+    public ActionBarMenuSubItem addSubItem(int id, int icon, CharSequence text,
+                                           Function<Context, ActionBarMenuSubItem> subItemFactory) {
         createPopupLayout();
 
-        ActionBarMenuSubItem cell = new ActionBarMenuSubItem(getContext());
+        ActionBarMenuSubItem cell = subItemFactory.apply(getContext());
         cell.setTextAndIcon(text, icon);
         cell.setMinimumWidth(AndroidUtilities.dp(196));
         cell.setTag(id);

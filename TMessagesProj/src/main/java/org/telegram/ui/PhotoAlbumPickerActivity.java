@@ -30,6 +30,7 @@ import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
+import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.PhotoPickerAlbumsCell;
@@ -129,7 +130,14 @@ public class PhotoAlbumPickerActivity extends BaseFragment implements Notificati
         ActionBarMenu menu = actionBar.createMenu();
         ActionBarMenuItem item = menu.addItem(0, R.drawable.ic_ab_other);
         item.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
-        item.addSubItem(1, R.drawable.profile_photos, "Use system gallery");
+        item.addSubItem(1, R.drawable.profile_photos,
+                LocaleController.getString("UseSystemGallery", R.string.UseSystemGallery),
+                ctx -> new ActionBarMenuSubItem(ctx,
+                        Theme.getDefaultColor(Theme.key_actionBarDefaultSubmenuItem),
+                        Theme.getDefaultColor(Theme.key_actionBarDefaultSubmenuItemIcon),
+                        Theme.getDefaultColor(Theme.key_dialogButtonSelector)));
+        item.setPopupLayoutBackgroundColor(Theme.getDefaultColor(
+                Theme.key_actionBarDefaultSubmenuBackground));
 
         fragmentView = new FrameLayout(context);
 

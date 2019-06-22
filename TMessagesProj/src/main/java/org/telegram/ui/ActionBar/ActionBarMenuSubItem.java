@@ -21,14 +21,20 @@ public class ActionBarMenuSubItem extends FrameLayout {
     private ImageView imageView;
 
     public ActionBarMenuSubItem(Context context) {
+        this(context, Theme.getColor(Theme.key_actionBarDefaultSubmenuItem),
+                Theme.getColor(Theme.key_actionBarDefaultSubmenuItemIcon),
+                Theme.getColor(Theme.key_dialogButtonSelector));
+    }
+
+    public ActionBarMenuSubItem(Context context, int textColor, int iconColor,  int selectorColor) {
         super(context);
 
-        setBackgroundDrawable(Theme.createSelectorDrawable(Theme.getColor(Theme.key_dialogButtonSelector), 2));
+        setBackgroundDrawable(Theme.createSelectorDrawable(selectorColor, 2));
         setPadding(AndroidUtilities.dp(18), 0, AndroidUtilities.dp(18), 0);
 
         imageView = new ImageView(context);
         imageView.setScaleType(ImageView.ScaleType.CENTER);
-        imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuItemIcon), PorterDuff.Mode.MULTIPLY));
+        imageView.setColorFilter(new PorterDuffColorFilter(iconColor, PorterDuff.Mode.MULTIPLY));
         addView(imageView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 40, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT)));
 
         textView = new TextView(context);
@@ -36,7 +42,7 @@ public class ActionBarMenuSubItem extends FrameLayout {
         textView.setSingleLine(true);
         textView.setGravity(Gravity.CENTER_HORIZONTAL);
         textView.setEllipsize(TextUtils.TruncateAt.END);
-        textView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
+        textView.setTextColor(textColor);
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL));
     }
