@@ -29,6 +29,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.graphics.drawable.ShapeDrawable;
@@ -2354,21 +2355,20 @@ public class Theme {
         return stateListDrawable;
     }
 
-    public static Drawable getRoundRectSelectorDrawable(int color) {
+    public static Drawable getRoundRectSelectorDrawable(float cornerRadius) {
+        return getRoundRectSelectorDrawable(cornerRadius, getColor(key_listSelector));
+    }
+
+    public static Drawable getRoundRectSelectorDrawable(float cornerRadius, int color) {
         if (Build.VERSION.SDK_INT >= 21) {
-            Drawable maskDrawable = createRoundRectDrawable(AndroidUtilities.dp(3), 0xffffffff);
+            Drawable maskDrawable = createRoundRectDrawable(
+                    AndroidUtilities.dp(cornerRadius), 0xffffffff);
             ColorStateList colorStateList = new ColorStateList(
                     new int[][]{StateSet.WILD_CARD},
                     new int[]{(color & 0x00ffffff) | 0x19000000}
             );
             return new RippleDrawable(colorStateList, null, maskDrawable);
-        } else {
-            StateListDrawable stateListDrawable = new StateListDrawable();
-            stateListDrawable.addState(new int[]{android.R.attr.state_pressed}, createRoundRectDrawable(AndroidUtilities.dp(3), (color & 0x00ffffff) | 0x19000000));
-            stateListDrawable.addState(new int[]{android.R.attr.state_selected}, createRoundRectDrawable(AndroidUtilities.dp(3), (color & 0x00ffffff) | 0x19000000));
-            stateListDrawable.addState(StateSet.WILD_CARD, new ColorDrawable(0x00000000));
-            return stateListDrawable;
-        }
+        } else return createSelectorDrawable(color, 2);
     }
 
     public static Drawable createSelectorWithBackgroundDrawable(int backgroundColor, int color) {
@@ -2418,7 +2418,6 @@ public class Theme {
     }
 
     public static Drawable createSelectorDrawable(int color, int maskType) {
-        Drawable drawable;
         if (Build.VERSION.SDK_INT >= 21) {
             Drawable maskDrawable = null;
             if (maskType == 1 && Build.VERSION.SDK_INT >= 23) {

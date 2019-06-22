@@ -62,12 +62,12 @@ public class ChannelIntroActivity extends BaseFragment {
                     imageView.measure(MeasureSpec.makeMeasureSpec((int) (width * 0.45f), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec((int) (height * 0.78f), MeasureSpec.EXACTLY));
                     whatIsChannelText.measure(MeasureSpec.makeMeasureSpec((int) (width * 0.6f), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.UNSPECIFIED));
                     descriptionText.measure(MeasureSpec.makeMeasureSpec((int) (width * 0.5f), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.UNSPECIFIED));
-                    createChannelText.measure(MeasureSpec.makeMeasureSpec((int) (width * 0.6f), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(24), MeasureSpec.EXACTLY));
+                    createChannelText.measure(MeasureSpec.makeMeasureSpec((int) (width * 0.6f), MeasureSpec.UNSPECIFIED), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(48), MeasureSpec.EXACTLY));
                 } else {
                     imageView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec((int) (height * 0.44f), MeasureSpec.EXACTLY));
                     whatIsChannelText.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.UNSPECIFIED));
                     descriptionText.measure(MeasureSpec.makeMeasureSpec((int) (width * 0.9f), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.UNSPECIFIED));
-                    createChannelText.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(24), MeasureSpec.EXACTLY));
+                    createChannelText.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.UNSPECIFIED), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(48), MeasureSpec.EXACTLY));
                 }
 
                 setMeasuredDimension(width, height);
@@ -84,6 +84,7 @@ public class ChannelIntroActivity extends BaseFragment {
                     int x = (int) (width * 0.4f);
                     y = (int) (height * 0.14f);
                     whatIsChannelText.layout(x, y, x + whatIsChannelText.getMeasuredWidth(), y + whatIsChannelText.getMeasuredHeight());
+                    x += (width - x - createChannelText.getMeasuredWidth()) / 2;
                     y = (int) (height * 0.61f);
                     createChannelText.layout(x, y, x + createChannelText.getMeasuredWidth(), y + createChannelText.getMeasuredHeight());
                     x = (int) (width * 0.45f);
@@ -97,8 +98,9 @@ public class ChannelIntroActivity extends BaseFragment {
                     y = (int) (height * 0.68f);
                     int x = (int) (width * 0.05f);
                     descriptionText.layout(x, y, x + descriptionText.getMeasuredWidth(), y + descriptionText.getMeasuredHeight());
+                    x = (width - createChannelText.getMeasuredWidth()) / 2;
                     y = (int) (height * 0.86f);
-                    createChannelText.layout(0, y, createChannelText.getMeasuredWidth(), y + createChannelText.getMeasuredHeight());
+                    createChannelText.layout(x, y, x + createChannelText.getMeasuredWidth(), y + createChannelText.getMeasuredHeight());
                 }
             }
         };
@@ -130,6 +132,9 @@ public class ChannelIntroActivity extends BaseFragment {
         createChannelText.setGravity(Gravity.CENTER);
         createChannelText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         createChannelText.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        createChannelText.setBackground(Theme.getRoundRectSelectorDrawable(12f));
+        createChannelText.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(8),
+                AndroidUtilities.dp(16), AndroidUtilities.dp(8));
         createChannelText.setText(LocaleController.getString("ChannelAlertCreate", R.string.ChannelAlertCreate));
         viewGroup.addView(createChannelText);
         createChannelText.setOnClickListener(v -> {
