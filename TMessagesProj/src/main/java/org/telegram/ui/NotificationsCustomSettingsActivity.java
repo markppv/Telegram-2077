@@ -154,6 +154,10 @@ public class NotificationsCustomSettingsActivity extends BaseFragment {
                     searchListViewAdapter.searchDialogs(null);
                     searching = false;
                     searchWas = false;
+                    showAll();
+                }
+
+                private void showAll() {
                     emptyView.setText(LocaleController.getString("NoExceptions", R.string.NoExceptions));
                     listView.setAdapter(adapter);
                     adapter.notifyDataSetChanged();
@@ -171,14 +175,15 @@ public class NotificationsCustomSettingsActivity extends BaseFragment {
                     if (text.length() != 0) {
                         searchWas = true;
                         if (listView != null) {
+                            emptyView.setShowAtCenter(true);
                             emptyView.setText(LocaleController.getString("NoResult", R.string.NoResult));
                             listView.setAdapter(searchListViewAdapter);
                             searchListViewAdapter.notifyDataSetChanged();
                             listView.setFastScrollVisible(false);
                             listView.setVerticalScrollBarEnabled(true);
                         }
-                    }
-                    searchListViewAdapter.searchDialogs(text);
+                        searchListViewAdapter.searchDialogs(text);
+                    } else showAll();
                 }
             });
             searchItem.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));

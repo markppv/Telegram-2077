@@ -105,12 +105,7 @@ public class PhonebookSelectActivity extends BaseFragment implements Notificatio
                 searchListViewAdapter.search(null);
                 searching = false;
                 searchWas = false;
-                listView.setAdapter(listViewAdapter);
-                listView.setSectionsType(1);
-                listViewAdapter.notifyDataSetChanged();
-                listView.setFastScrollVisible(true);
-                listView.setVerticalScrollBarEnabled(false);
-                emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
+                showAll();
             }
 
             @Override
@@ -121,8 +116,17 @@ public class PhonebookSelectActivity extends BaseFragment implements Notificatio
                 String text = editText.getText().toString();
                 if (text.length() != 0) {
                     searchWas = true;
-                }
-                searchListViewAdapter.search(text);
+                    searchListViewAdapter.search(text);
+                } else showAll();
+            }
+
+            private void showAll() {
+                listView.setAdapter(listViewAdapter);
+                listView.setSectionsType(1);
+                listViewAdapter.notifyDataSetChanged();
+                listView.setFastScrollVisible(true);
+                listView.setVerticalScrollBarEnabled(false);
+                emptyView.setText(LocaleController.getString("NoContacts", R.string.NoContacts));
             }
         });
         item.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));

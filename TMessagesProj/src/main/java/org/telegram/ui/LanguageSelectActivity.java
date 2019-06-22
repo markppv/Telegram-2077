@@ -102,8 +102,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                 searching = false;
                 searchWas = false;
                 if (listView != null) {
-                    emptyView.setVisibility(View.GONE);
-                    listView.setAdapter(listAdapter);
+                    showAll();
                 }
             }
 
@@ -116,7 +115,12 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                     if (listView != null) {
                         listView.setAdapter(searchListViewAdapter);
                     }
-                }
+                } else showAll();
+            }
+
+            private void showAll() {
+                emptyView.setVisibility(View.GONE);
+                listView.setAdapter(listAdapter);
             }
         });
         item.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));
