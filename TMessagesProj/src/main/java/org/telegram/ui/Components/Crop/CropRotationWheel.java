@@ -101,7 +101,7 @@ public class CropRotationWheel extends FrameLayout {
 
         setWillNotDraw(false);
 
-        setRotation(0.0f, false);
+        setRotation(0.0f, true);
     }
 
     public void setFreeform(boolean freeform) {
@@ -115,7 +115,7 @@ public class CropRotationWheel extends FrameLayout {
     }
 
     public void reset() {
-        setRotation(0.0f, false);
+        setRotation(0.0f, true);
     }
 
     public void setListener(RotationWheelListener listener) {
