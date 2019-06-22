@@ -233,7 +233,9 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
         textView.setTextColor(0xff1393d2);
         textView.setGravity(Gravity.CENTER);
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-        frameLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 30, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 20));
+        textView.setBackground(Theme.getRoundRectSelectorDrawable(12, 0x0f000000));
+        textView.setPadding(AndroidUtilities.dp(16), 0, AndroidUtilities.dp(16), 0);
+        frameLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 38, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 16));
         textView.setOnClickListener(v -> {
             if (startPressed || localeInfo == null) {
                 return;

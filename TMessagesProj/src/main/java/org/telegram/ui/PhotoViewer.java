@@ -2792,7 +2792,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             textView.setGravity(Gravity.CENTER);
             textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
             textView.setText(LocaleController.getString("Done", R.string.Done).toUpperCase());
-            textView.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(0xff49bcf2));
+            textView.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(3f, 0xff49bcf2));
             textView.setPadding(AndroidUtilities.dp(10), 0, AndroidUtilities.dp(10), 0);
             buttonsLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 36, Gravity.TOP | Gravity.RIGHT));
             textView.setOnClickListener(v1 -> {
@@ -2828,7 +2828,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             textView.setGravity(Gravity.CENTER);
             textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
             textView.setText(LocaleController.getString("Cancel", R.string.Cancel).toUpperCase());
-            textView.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(0xff49bcf2));
+            textView.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(3f, 0xff49bcf2));
             textView.setPadding(AndroidUtilities.dp(10), 0, AndroidUtilities.dp(10), 0);
             buttonsLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 36, Gravity.TOP | Gravity.RIGHT));
             textView.setOnClickListener(v14 -> bottomSheet.dismiss());
