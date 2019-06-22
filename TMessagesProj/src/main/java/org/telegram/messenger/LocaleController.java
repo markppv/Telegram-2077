@@ -19,6 +19,8 @@ import android.text.TextUtils;
 import android.text.format.DateFormat;
 import android.util.Xml;
 
+import androidx.core.util.Consumer;
+
 import org.telegram.messenger.time.FastDateFormat;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -805,11 +807,25 @@ public class LocaleController {
         return new HashMap<>();
     }
 
-    public void applyLanguage(LocaleInfo localeInfo, boolean override, boolean init, final int currentAccount) {
+    public void applyLanguage(LocaleController.LocaleInfo localeInfo, boolean override,
+                              boolean init, final int currentAccount) {
         applyLanguage(localeInfo, override, init, false, false, currentAccount);
     }
 
-    public void applyLanguage(final LocaleInfo localeInfo, boolean override, boolean init, boolean fromFile, boolean force, final int currentAccount) {
+    public void applyLanguage(LocaleController.LocaleInfo localeInfo, boolean override,
+                              boolean init, final int currentAccount,
+                              Consumer<Boolean> onRemoteResult) {
+        applyLanguage(localeInfo, override, init, false, false, currentAccount, onRemoteResult);
+    }
+
+    public void applyLanguage(final LocaleController.LocaleInfo localeInfo, boolean override, boolean init,
+                              boolean fromFile, boolean force, final int currentAccount) {
+        applyLanguage(localeInfo, override, init, fromFile, force, currentAccount, null);
+    }
+
+    public void applyLanguage(final LocaleController.LocaleInfo localeInfo, boolean override, boolean init,
+                              boolean fromFile, boolean force, final int currentAccount,
+                              Consumer<Boolean> onRemoteResult) {
         if (localeInfo == null) {
             return;
         }
@@ -820,7 +836,7 @@ public class LocaleController {
         if (!init) {
             ConnectionsManager.setLangCode(localeInfo.getLangCode());
         }
-        LocaleInfo existingInfo = getLanguageFromDict(localeInfo.getKey());
+        LocaleController.LocaleInfo existingInfo = getLanguageFromDict(localeInfo.getKey());
         if (existingInfo == null) {
             if (localeInfo.isRemote()) {
                 remoteLanguages.add(localeInfo);
@@ -839,9 +855,9 @@ public class LocaleController {
                 FileLog.d("reload locale because one of file doesn't exist" + pathToFile + " " + pathToBaseFile);
             }
             if (init) {
-                AndroidUtilities.runOnUIThread(() -> applyRemoteLanguage(localeInfo, null, true, currentAccount));
+                AndroidUtilities.runOnUIThread(() -> applyRemoteLanguage(localeInfo, null, true, currentAccount, onRemoteResult));
             } else {
-                applyRemoteLanguage(localeInfo, null, true, currentAccount);
+                applyRemoteLanguage(localeInfo, null, true, currentAccount, onRemoteResult);
             }
         }
         try {
@@ -886,13 +902,13 @@ public class LocaleController {
                 if (currentPluralRules == null) {
                     currentPluralRules = allRules.get(currentLocale.getLanguage());
                     if (currentPluralRules == null) {
-                        currentPluralRules = new PluralRules_None();
+                        currentPluralRules = new LocaleController.PluralRules_None();
                     }
                 }
             }
             changingConfiguration = true;
             Locale.setDefault(currentLocale);
-            android.content.res.Configuration config = new android.content.res.Configuration();
+            Configuration config = new Configuration();
             config.locale = currentLocale;
             ApplicationLoader.applicationContext.getResources().updateConfiguration(config, ApplicationLoader.applicationContext.getResources().getDisplayMetrics());
             changingConfiguration = false;
@@ -904,6 +920,7 @@ public class LocaleController {
                 }
                 reloadLastFile = false;
             }
+
         } catch (Exception e) {
             FileLog.e(e);
             changingConfiguration = false;
@@ -1814,7 +1831,27 @@ public class LocaleController {
         }, ConnectionsManager.RequestFlagWithoutLogin);
     }
 
-    private void applyRemoteLanguage(LocaleInfo localeInfo, String langCode, boolean force, final int currentAccount) {
+    private void applyRemoteLanguage(LocaleInfo localeInfo, String langCode,
+                                     boolean force, final int currentAccount) {
+        applyRemoteLanguage(localeInfo, langCode, force, currentAccount, null);
+    }
+
+    private void applyRemoteLanguage(LocaleInfo localeInfo, String langCode, boolean force,
+                                     final int currentAccount, Consumer<Boolean> onResult) {
+        applyRemoteLanguageInternal(localeInfo, langCode, force, currentAccount, response ->
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (onResult != null) {
+                        onResult.accept(response != null);
+                    }
+                    if (response != null) {
+                        saveRemoteLocaleStrings(localeInfo, response, currentAccount);
+                    }
+                }));
+    }
+
+    private void applyRemoteLanguageInternal(LocaleInfo localeInfo, String langCode,
+                                             boolean force, final int currentAccount,
+                                             Consumer<TLRPC.TL_langPackDifference> onResult) {
         if (localeInfo == null || localeInfo != null && !localeInfo.isRemote() && !localeInfo.isUnofficial()) {
             return;
         }
@@ -1826,18 +1863,14 @@ public class LocaleController {
                     req.lang_code = localeInfo.getBaseLangCode();
                     req.lang_pack = "";
                     ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                        if (response != null) {
-                            AndroidUtilities.runOnUIThread(() -> saveRemoteLocaleStrings(localeInfo, (TLRPC.TL_langPackDifference) response, currentAccount));
-                        }
+                        onResult.accept((TLRPC.TL_langPackDifference) response);
                     }, ConnectionsManager.RequestFlagWithoutLogin);
                 }
             } else {
                 TLRPC.TL_langpack_getLangPack req = new TLRPC.TL_langpack_getLangPack();
                 req.lang_code = localeInfo.getBaseLangCode();
                 ConnectionsManager.getInstance(currentAccount).sendRequest(req, (TLObject response, TLRPC.TL_error error) -> {
-                    if (response != null) {
-                        AndroidUtilities.runOnUIThread(() -> saveRemoteLocaleStrings(localeInfo, (TLRPC.TL_langPackDifference) response, currentAccount));
-                    }
+                    onResult.accept((TLRPC.TL_langPackDifference) response);
                 }, ConnectionsManager.RequestFlagWithoutLogin);
             }
         }
@@ -1848,9 +1881,7 @@ public class LocaleController {
                 req.lang_code = localeInfo.getLangCode();
                 req.lang_pack = "";
                 ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                    if (response != null) {
-                        AndroidUtilities.runOnUIThread(() -> saveRemoteLocaleStrings(localeInfo, (TLRPC.TL_langPackDifference) response, currentAccount));
-                    }
+                    onResult.accept((TLRPC.TL_langPackDifference) response);
                 }, ConnectionsManager.RequestFlagWithoutLogin);
             } else {
                 for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
@@ -1859,9 +1890,7 @@ public class LocaleController {
                 TLRPC.TL_langpack_getLangPack req = new TLRPC.TL_langpack_getLangPack();
                 req.lang_code = localeInfo.getLangCode();
                 ConnectionsManager.getInstance(currentAccount).sendRequest(req, (TLObject response, TLRPC.TL_error error) -> {
-                    if (response != null) {
-                        AndroidUtilities.runOnUIThread(() -> saveRemoteLocaleStrings(localeInfo, (TLRPC.TL_langPackDifference) response, currentAccount));
-                    }
+                    onResult.accept((TLRPC.TL_langPackDifference) response);
                 }, ConnectionsManager.RequestFlagWithoutLogin);
             }
         }
