@@ -432,7 +432,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                     Browser.openUrl(LaunchActivity.this, LocaleController.getString("TelegramFaqUrl", R.string.TelegramFaqUrl));
                     drawerLayoutContainer.closeDrawer(false);
                 } else if (id == 10) {
-                    presentFragment(new CallLogActivity());
+                    presentFragmentWithOpenDelay(new CallLogActivity(), 150);
                     drawerLayoutContainer.closeDrawer(false);
                 } else if (id == 11) {
                     Bundle args = new Bundle();
@@ -590,6 +590,11 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             FileLog.e(e);
         }
         MediaController.getInstance().setBaseActivity(this, true);
+    }
+
+    private void presentFragmentWithOpenDelay(BaseFragment fragment, int openAnimationDelay) {
+        fragment.setOpenAnimationDelay(openAnimationDelay);
+        presentFragment(fragment);
     }
 
     public void switchToAccount(int account, boolean removeAll) {
