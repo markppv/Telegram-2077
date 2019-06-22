@@ -26,8 +26,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Parcelable;
-import androidx.viewpager.widget.PagerAdapter;
-import androidx.viewpager.widget.ViewPager;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.TextureView;
@@ -38,6 +36,10 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
@@ -51,6 +53,8 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BottomPagesView;
 import org.telegram.ui.Components.LayoutHelper;
 
@@ -81,6 +85,7 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
     private boolean dragging;
     private int startDragX;
     private boolean destroyed;
+    private boolean goToLoginAfterReloadingInterface;
 
     private LocaleController.LocaleInfo localeInfo;
 
@@ -209,9 +214,7 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
         startMessagingButton.setPadding(AndroidUtilities.dp(20), AndroidUtilities.dp(10), AndroidUtilities.dp(20), AndroidUtilities.dp(10));
         frameLayout.addView(startMessagingButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM, 10, 0, 10, 76));
         startMessagingButton.setOnClickListener(view -> {
-            if (startPressed) {
-                return;
-            }
+            if (startPressed) return;
             startPressed = true;
             Intent intent2 = new Intent(IntroActivity.this, LaunchActivity.class);
             intent2.putExtra("fromIntro", true);
@@ -230,21 +233,31 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
         frameLayout.addView(bottomPages, LayoutHelper.createFrame(66, 5, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 350, 0, 0));
 
         textView = new TextView(this);
+        textView.setLines(1);
+        textView.setSingleLine(true);
         textView.setTextColor(0xff1393d2);
         textView.setGravity(Gravity.CENTER);
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-        frameLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 30, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 20));
+        textView.setBackground(Theme.createSelectorDrawableRounded(0x0f000000, 12));
+        textView.setPadding(AndroidUtilities.dp(16), 0, AndroidUtilities.dp(16), 0);
+        frameLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 38, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 16));
         textView.setOnClickListener(v -> {
-            if (startPressed || localeInfo == null) {
-                return;
-            }
-            LocaleController.getInstance().applyLanguage(localeInfo, true, false, currentAccount);
-            startPressed = true;
-            Intent intent2 = new Intent(IntroActivity.this, LaunchActivity.class);
-            intent2.putExtra("fromIntro", true);
-            startActivity(intent2);
-            destroyed = true;
-            finish();
+            if (startPressed || localeInfo == null ||
+                    goToLoginAfterReloadingInterface) return;
+            AlertDialog progressDialog = new AlertDialog(this, 3);
+            progressDialog.setOnCancelListener(dialog ->
+                    goToLoginAfterReloadingInterface = false);
+            progressDialog.show();
+            goToLoginAfterReloadingInterface = true;
+            LocaleController.getInstance().applyLanguage(localeInfo,
+                    true, false, currentAccount, isSuccess -> {
+                        if (isSuccess) startPressed = true; else {
+                            goToLoginAfterReloadingInterface = false;
+                            Toast.makeText(this, LocaleController.getString("ErrorOccurred",
+                                    R.string.ErrorOccurred), Toast.LENGTH_LONG);
+                        }
+                        progressDialog.hide();
+                    });
         });
 
         if (AndroidUtilities.isTablet()) {
@@ -270,6 +283,7 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
         checkContinueText();
         justCreated = true;
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.suggestedLangpack);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.reloadInterface);
 
         AndroidUtilities.handleProxyIntent(this, getIntent());
     }
@@ -304,6 +318,7 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
         super.onDestroy();
         destroyed = true;
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.suggestedLangpack);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.reloadInterface);
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         preferences.edit().putLong("intro_crashed_time", 0).commit();
     }
@@ -363,6 +378,15 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.suggestedLangpack) {
             checkContinueText();
+        } else if (id == NotificationCenter.reloadInterface) {
+            if (goToLoginAfterReloadingInterface) {
+                goToLoginAfterReloadingInterface = false;
+                Intent intent2 = new Intent(IntroActivity.this, LaunchActivity.class);
+                intent2.putExtra("fromIntro", true);
+                startActivity(intent2);
+                destroyed = true;
+                finish();
+            }
         }
     }
 
@@ -477,7 +501,7 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
 
             int[] configsCount = new int[1];
             EGLConfig[] configs = new EGLConfig[1];
-            int[] configSpec = new int[] {
+            int[] configSpec = new int[]{
                     EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
                     EGL10.EGL_RED_SIZE, 8,
                     EGL10.EGL_GREEN_SIZE, 8,
@@ -505,7 +529,7 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
                 return false;
             }
 
-            int[] attrib_list = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE };
+            int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
             eglContext = egl10.eglCreateContext(eglDisplay, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
             if (eglContext == null) {
                 if (BuildVars.LOGS_ENABLED) {
