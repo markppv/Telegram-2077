@@ -371,7 +371,7 @@ public class ChatRightsEditActivity extends BaseFragment {
 
                 for (int a = 0; a < buttons.length; a++) {
                     buttons[a] = new BottomSheet.BottomSheetCell(context, 0);
-                    buttons[a].setPadding(AndroidUtilities.dp(23), 0, AndroidUtilities.dp(23), 0);
+                    buttons[a].setPadding(AndroidUtilities.dp(8), 0, AndroidUtilities.dp(8), 0);
                     buttons[a].setTag(a);
                     buttons[a].setBackgroundDrawable(Theme.getSelectorDrawable(false));
                     String text;
