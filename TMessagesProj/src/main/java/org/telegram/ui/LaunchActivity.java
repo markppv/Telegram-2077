@@ -367,7 +367,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                     }
                 });
                 layersActionBarLayout.setClipToOutline(true);
-                layersActionBarLayout.setElevation(AndroidUtilities.dp(4));
+                layersActionBarLayout.setElevation(AndroidUtilities.dp(2));
             } else {
             layersActionBarLayout.setBackgroundResource(R.drawable.boxshadow);
             }
