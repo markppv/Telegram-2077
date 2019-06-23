@@ -516,7 +516,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                         ClipboardManager clipboard = (ClipboardManager) ApplicationLoader
                                 .applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
                         clipboard.setPrimaryClip(ClipData.newPlainText("label", clipText));
-                        Toast.makeText(getParentActivity(), LocaleController.getString("TextCopied", R.string.TextCopied), Toast.LENGTH_SHORT).show();
+                        final String s;
+                        if (position == numberRow) {
+                            s = LocaleController.getString("PhoneCopied", R.string.PhoneCopied);
+                        } else s = LocaleController.getString("TextCopied", R.string.TextCopied);
+                        Toast.makeText(getParentActivity(), s, Toast.LENGTH_SHORT).show();
                     } catch (Exception e) {
                         FileLog.e(e);
                     }
