@@ -369,7 +369,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                 layersActionBarLayout.setClipToOutline(true);
                 layersActionBarLayout.setElevation(AndroidUtilities.dp(4));
             } else {
-            layersActionBarLayout.setBackgroundResource(R.drawable.boxshadow);
+                layersActionBarLayout.setBackgroundResource(R.drawable.boxshadow);
             }
             layersActionBarLayout.init(layerFragmentsStack);
             layersActionBarLayout.setDelegate(this);
@@ -2756,9 +2756,9 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             boolean nightTheme = (Boolean) args[1];
             boolean withThemeTransitionView = (Boolean) args[2];
             actionBarLayout.animateThemedValues(theme, nightTheme, withThemeTransitionView);
-            if (!withThemeTransitionView && AndroidUtilities.isTablet()) {
-                layersActionBarLayout.animateThemedValues(theme, nightTheme, false);
-                rightActionBarLayout.animateThemedValues(theme, nightTheme, false);
+            if (AndroidUtilities.isTablet()) {
+                layersActionBarLayout.animateThemedValues(theme, nightTheme, withThemeTransitionView);
+                rightActionBarLayout.animateThemedValues(theme, nightTheme, withThemeTransitionView);
             }
         } else if (id == NotificationCenter.notificationsCountUpdated) {
             if (sideMenu != null) {

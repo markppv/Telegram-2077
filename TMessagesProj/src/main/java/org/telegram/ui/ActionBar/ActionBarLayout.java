@@ -1473,7 +1473,7 @@ public class ActionBarLayout extends FrameLayout {
         }
         Theme.setAnimatingColor(true);
         themeAnimatorSet.playTogether(ObjectAnimator.ofFloat(this, "themeAnimationValue", 0.0f, 1.0f));
-        themeAnimatorSet.setDuration(withThemeTransitionView ? 0 : 200);
+        themeAnimatorSet.setDuration(withThemeTransitionView || AndroidUtilities.isTablet() ? 0 : 200);
         themeAnimatorSet.start();
     }
 

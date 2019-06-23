@@ -853,7 +853,9 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         if (themeInfo == Theme.getCurrentTheme()) {
                             return;
                         }
-                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, false);
+                        NotificationCenter.getGlobalInstance().postNotificationName(
+                                NotificationCenter.needSetDayNightTheme,
+                                themeInfo, false, false);
                     } else {
                         Theme.setCurrentNightTheme(themeInfo);
                     }
@@ -1618,7 +1620,11 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         if (themeInfo == Theme.getCurrentTheme()) {
                             return;
                         }
-                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, true);
+                        final boolean withThemeTransitionView = !AndroidUtilities.isTablet();
+                        NotificationCenter.getGlobalInstance().postNotificationName(
+                                NotificationCenter.needSetDayNightTheme,
+                                themeInfo, false, withThemeTransitionView);
+                        if (!withThemeTransitionView) updateCurrentThemeChecks();
                     });
                     horizontalListView.setOnItemLongClickListener((view12, position) -> {
                         InnerThemeView innerThemeView = (InnerThemeView) view12;
