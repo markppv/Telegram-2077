@@ -38,12 +38,16 @@ public class DrawerActionCell extends FrameLayout {
         textView.setSingleLine(true);
         textView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
         textView.setCompoundDrawablePadding(AndroidUtilities.dp(29));
-        addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 19, 0, 16, 0));
+        addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48,
+                Gravity.LEFT | Gravity.CENTER_VERTICAL, 19, 0, 16, 0));
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(48), MeasureSpec.EXACTLY));
+        super.onMeasure(
+                MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(AndroidUtilities.isTablet() ? 56 : 48),
+                        MeasureSpec.EXACTLY));
     }
 
     @Override

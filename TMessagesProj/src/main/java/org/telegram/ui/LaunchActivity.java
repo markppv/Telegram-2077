@@ -2717,7 +2717,13 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                 if (sideMenu != null) {
                     sideMenu.setBackgroundColor(Theme.getColor(Theme.key_chats_menuBackground));
                     sideMenu.setGlowColor(Theme.getColor(Theme.key_chats_menuBackground));
-                    sideMenu.setListSelectorColor(Theme.getColor(Theme.key_listSelector));
+                    // sideMenu.setListSelectorColor(Theme.getColor(Theme.key_listSelector));
+                    sideMenu.setSelectorPadding(0, 0, AndroidUtilities.dp(8), 0);
+                    float r = AndroidUtilities.isTablet() ? 28 : 24;
+                    sideMenu.setSelectorDrawable(Theme.getRoundRectSelectorDrawable(
+                            new float[] { 0, 0, r, r, r, r, 0, 0 },
+                            Theme.getColor(Theme.key_listSelector)
+                    ));
                     sideMenu.getAdapter().notifyDataSetChanged();
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
