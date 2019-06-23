@@ -3661,7 +3661,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
                 current /= 1000;
                 total /= 1000;
-                newText = String.format("%02d:%02d / %02d:%02d", current / 60, current % 60, total / 60, total % 60);
+                newText = String.format("%s / %s", AndroidUtilities.formatDuration(current, true),
+                        AndroidUtilities.formatDuration(total, true));
             } else {
                 newText = String.format("%02d:%02d / %02d:%02d", 0, 0, 0, 0);
             }
@@ -8623,9 +8624,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         }
 
         String videoDimension = String.format("%dx%d", width, height);
-        int minutes = (int) (estimatedDuration / 1000 / 60);
-        int seconds = (int) Math.ceil(estimatedDuration / 1000) - minutes * 60;
-        String videoTimeSize = String.format("%d:%02d, ~%s", minutes, seconds, AndroidUtilities.formatFileSize(estimatedSize));
+        String videoTimeSize = String.format("%s, ~%s", AndroidUtilities.formatDuration(estimatedDuration),
+                AndroidUtilities.formatFileSize(estimatedSize));
         currentSubtitle = String.format("%s, %s", videoDimension, videoTimeSize);
         actionBar.setSubtitle(muteVideo ?
                 LocaleController.getString("SendAsGif", R.string.SendAsGif) :
@@ -9072,9 +9072,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                             imageView.setOrientation(photoEntry.orientation, true);
                             if (photoEntry.isVideo) {
                                 cell.videoInfoContainer.setVisibility(View.VISIBLE);
-                                int minutes = photoEntry.duration / 60;
-                                int seconds = photoEntry.duration - minutes * 60;
-                                cell.videoTextView.setText(String.format("%d:%02d", minutes, seconds));
+                                cell.videoTextView.setText(AndroidUtilities.formatDuration(photoEntry.duration));
                                 imageView.setImage("vthumb://" + photoEntry.imageId + ":" + photoEntry.path, null, mContext.getResources().getDrawable(R.drawable.nophotos));
                             } else {
                                 imageView.setImage("thumb://" + photoEntry.imageId + ":" + photoEntry.path, null, mContext.getResources().getDrawable(R.drawable.nophotos));

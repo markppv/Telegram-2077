@@ -6265,7 +6265,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     }
                 }
             }
-            String timeString = String.format("%d:%02d", duration / 60, duration % 60);
+            String timeString = AndroidUtilities.formatDuration(duration);
             if (lastTimeString == null || lastTimeString != null && !lastTimeString.equals(timeString)) {
                 lastTimeString = timeString;
                 audioTimePaint.setTextSize(AndroidUtilities.dp(16));
@@ -10735,7 +10735,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             long total = videoPlayer.getDuration();
             total /= 1000;
             if (total != C.TIME_UNSET && current != C.TIME_UNSET) {
-                newText = String.format("%02d:%02d / %02d:%02d", current / 60, current % 60, total / 60, total % 60);
+                newText = String.format("%s / %s", AndroidUtilities.formatDuration(current, true),
+                        AndroidUtilities.formatDuration(total, true));
             } else {
                 newText = String.format("%02d:%02d / %02d:%02d", 0, 0, 0, 0);
             }
