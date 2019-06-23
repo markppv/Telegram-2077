@@ -414,7 +414,8 @@ public class SharedConfig {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("useThreeLinesLayout", useThreeLinesLayout);
         editor.commit();
-        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.dialogsNeedReload, true);
+        NotificationCenter.getInstance(UserConfig.selectedAccount)
+                .postNotificationName(NotificationCenter.dialogsNeedReload, true);
     }
 
     public static void toggleArchiveHidden() {
