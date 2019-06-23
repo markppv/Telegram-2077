@@ -618,12 +618,11 @@ public class CropView extends FrameLayout implements CropAreaView.AreaViewListen
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
-        imageView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+        imageView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
-            public boolean onPreDraw() {
+            public void onGlobalLayout() {
                 fitViewScale(false, false);
-                imageView.getViewTreeObserver().removeOnPreDrawListener(this);
-                return false;
+                imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
         });
     }
