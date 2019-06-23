@@ -2799,12 +2799,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
+        Runnable doWhenFullyVisibleRunnable = null;
         if (id == NotificationCenter.dialogsNeedReload) {
             if (dialogsListFrozen) {
                 return;
             }
             //checkUnreadCount(true);
-            Runnable updateDialogs = () -> {
+            doWhenFullyVisibleRunnable = () -> {
                 if (dialogsAdapter != null) {
                     if (dialogsAdapter.isDataSetChanged() || args.length > 0) {
                         dialogsAdapter.notifyDataSetChanged();
@@ -2831,10 +2832,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
             };
-            if (folderId == 0) updateDialogs.run();
-            else doWhenFullyVisible(updateDialogs);
         } else if (id == NotificationCenter.emojiDidLoad) {
-            doWhenFullyVisible(() -> updateVisibleRows(0));
+            doWhenFullyVisibleRunnable = () -> updateVisibleRows(0);
         } else if (id == NotificationCenter.closeSearchByActiveAction) {
             if (actionBar != null) {
                 actionBar.closeSearchField();
@@ -2843,19 +2842,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             updateProxyButton(false);
         } else if (id == NotificationCenter.updateInterfaces) {
             Integer mask = (Integer) args[0];
-            doWhenFullyVisible(() -> updateVisibleRows(mask));
+            doWhenFullyVisibleRunnable = () -> updateVisibleRows(mask);
             /*if ((mask & MessagesController.UPDATE_MASK_NEW_MESSAGE) != 0 || (mask & MessagesController.UPDATE_MASK_READ_DIALOG_MESSAGE) != 0) {
                 checkUnreadCount(true);
             }*/
         } else if (id == NotificationCenter.appDidLogout) {
             dialogsLoaded[currentAccount] = false;
         } else if (id == NotificationCenter.encryptedChatUpdated) {
-            doWhenFullyVisible(() -> updateVisibleRows(0));
+            doWhenFullyVisibleRunnable = () -> updateVisibleRows(0);
         } else if (id == NotificationCenter.contactsDidLoad) {
             if (dialogsListFrozen) {
                 return;
             }
-            doWhenFullyVisible(() -> {
+            doWhenFullyVisibleRunnable = () -> {
                 if (dialogsType == 0 && getMessagesController().getDialogs(folderId).isEmpty()) {
                     if (dialogsAdapter != null) {
                         dialogsAdapter.notifyDataSetChanged();
@@ -2863,7 +2862,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 } else {
                     updateVisibleRows(0);
                 }
-            });
+            };
         } else if (id == NotificationCenter.openedChatChanged) {
             if (dialogsType == 0 && AndroidUtilities.isTablet()) {
                 boolean close = (Boolean) args[1];
@@ -2897,13 +2896,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 dialogsSearchAdapter.notifyDataSetChanged();
             }
         } else if (id == NotificationCenter.didUpdateConnectionState) {
-            doWhenFullyVisible(() -> {
+            doWhenFullyVisibleRunnable = () -> {
                 int state = AccountInstance.getInstance(account).getConnectionsManager().getConnectionState();
                 if (currentConnectionState != state) {
                     currentConnectionState = state;
                     updateProxyButton(true);
                 }
-            });
+            };
         } else if (id == NotificationCenter.dialogsUnreadCounterChanged) {
             /*if (!onlySelect) {
                 int count = (Integer) args[0];
@@ -2952,6 +2951,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (folderId == fid && folderId != 0) {
                 finishFragment();
             }
+        }
+        if (doWhenFullyVisibleRunnable != null) {
+            if (folderId == 0) doWhenFullyVisibleRunnable.run();
+            else doWhenFullyVisible(doWhenFullyVisibleRunnable);
         }
     }
 
