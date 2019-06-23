@@ -363,7 +363,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                     @Override
                     public void getOutline(View view, Outline outline) {
                         outline.setRoundRect(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight(),
-                                AndroidUtilities.dp(16));
+                                AndroidUtilities.dp(12));
                     }
                 });
                 layersActionBarLayout.setClipToOutline(true);
