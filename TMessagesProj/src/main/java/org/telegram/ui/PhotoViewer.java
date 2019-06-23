@@ -8627,7 +8627,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         int seconds = (int) Math.ceil(estimatedDuration / 1000) - minutes * 60;
         String videoTimeSize = String.format("%d:%02d, ~%s", minutes, seconds, AndroidUtilities.formatFileSize(estimatedSize));
         currentSubtitle = String.format("%s, %s", videoDimension, videoTimeSize);
-        actionBar.setSubtitle(muteVideo ? null : currentSubtitle);
+        actionBar.setSubtitle(muteVideo ?
+                LocaleController.getString("SendAsGif", R.string.SendAsGif) :
+                currentSubtitle);
     }
 
     private void requestVideoPreview(int request) {
