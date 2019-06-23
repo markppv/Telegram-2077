@@ -239,6 +239,10 @@ public class ActionBarMenuItem extends FrameLayout {
         });
     }
 
+    public void setPopupLayoutBackgroundColor(int color) {
+        if (popupLayout != null) popupLayout.setBackgroundColor(color);
+    }
+
     public void addSubItem(View view, int width, int height) {
         createPopupLayout();
         popupLayout.addView(view, new LinearLayout.LayoutParams(width, height));
@@ -308,9 +312,14 @@ public class ActionBarMenuItem extends FrameLayout {
     }
 
     public ActionBarMenuSubItem addSubItem(int id, int icon, CharSequence text) {
+        return addSubItem(id, icon, text, defaultSubItemFactory);
+    }
+
+    public ActionBarMenuSubItem addSubItem(int id, int icon, CharSequence text,
+                                           Function<Context, ActionBarMenuSubItem> subItemFactory) {
         createPopupLayout();
 
-        ActionBarMenuSubItem cell = new ActionBarMenuSubItem(getContext());
+        ActionBarMenuSubItem cell = subItemFactory.apply(getContext());
         cell.setTextAndIcon(text, icon);
         cell.setMinimumWidth(AndroidUtilities.dp(196));
         cell.setTag(id);
@@ -460,6 +469,10 @@ public class ActionBarMenuItem extends FrameLayout {
             }
             return true;
         }
+    }
+
+    public boolean isSearchExpanded() {
+        return searchContainer.getVisibility() == VISIBLE;
     }
 
     public void closeSubMenu() {

@@ -478,6 +478,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private AnimatorSet scrimAnimatorSet;
     private ActionBarPopupWindow scrimPopupWindow;
 
+    private BackDrawable[] tabletBackDrawables = new BackDrawable[] {
+            new BackDrawable(false), new BackDrawable(true)
+    };
+
     private class UnreadCounterTextView extends TextView {
 
         private int currentCounter;
@@ -1369,6 +1373,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                 @Override
                 public void onSearchCollapse() {
+                    if (AndroidUtilities.isTablet()) {
+                        actionBar.setBackButtonDrawable(tabletBackDrawables[1]);
+                    }
                     searchCalendarButton.setVisibility(View.VISIBLE);
                     if (searchUserButton != null) {
                         searchUserButton.setVisibility(View.VISIBLE);
@@ -1411,6 +1418,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                 @Override
                 public void onSearchExpand() {
+                    if (AndroidUtilities.isTablet()) {
+                        actionBar.setBackButtonDrawable(tabletBackDrawables[0]);
+                    }
                     if (!openSearchKeyboard) {
                         return;
                     }
@@ -11666,7 +11676,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     ((ViewGroup) fragmentView).addView(fragmentContextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 39, Gravity.TOP | Gravity.LEFT, 0, -36, 0, 0));
                 }
             } else {
-                actionBar.setBackButtonDrawable(new BackDrawable(parentLayout == null || parentLayout.fragmentsStack.isEmpty() || parentLayout.fragmentsStack.get(0) == ChatActivity.this || parentLayout.fragmentsStack.size() == 1));
+                boolean close = parentLayout == null || parentLayout.fragmentsStack.size() <= 1 ||
+                        parentLayout.fragmentsStack.get(0) == ChatActivity.this;
+                close &= !searchItem.isSearchExpanded();
+                actionBar.setBackButtonDrawable(tabletBackDrawables[close ? 1 : 0]);
                 if (fragmentContextView != null && fragmentContextView.getParent() != null) {
                     fragmentView.setPadding(0, 0, 0, 0);
                     ((ViewGroup) fragmentView).removeView(fragmentContextView);
