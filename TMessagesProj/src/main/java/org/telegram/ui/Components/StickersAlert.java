@@ -125,6 +125,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
     private int reqId;
     private boolean ignoreLayout;
     private boolean showEmoji;
+    private boolean forceDontShowEmoji;
 
     private boolean clearsInputField;
 
@@ -859,6 +860,14 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         pickerBottomLayout.setOnClickListener(onClickListener);
     }
 
+    public boolean isForceDontShowEmoji() {
+        return forceDontShowEmoji;
+    }
+
+    public void setForceDontShowEmoji(boolean forceDontShowEmoji) {
+        this.forceDontShowEmoji = forceDontShowEmoji;
+    }
+
     private class GridAdapter extends RecyclerListView.SelectionAdapter {
 
         private Context context;
@@ -950,7 +959,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                         break;
                 }
             } else {
-                ((StickerEmojiCell) holder.itemView).setSticker(stickerSet.documents.get(position), stickerSet, showEmoji);
+                ((StickerEmojiCell) holder.itemView).setSticker(stickerSet.documents.get(position), stickerSet, showEmoji && !forceDontShowEmoji);
             }
         }
 

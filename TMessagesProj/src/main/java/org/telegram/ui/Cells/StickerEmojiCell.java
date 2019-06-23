@@ -45,6 +45,7 @@ public class StickerEmojiCell extends FrameLayout {
     private boolean recent;
     private static AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
     private int currentAccount = UserConfig.selectedAccount;
+    private boolean passInvalidate;
 
     public StickerEmojiCell(Context context) {
         super(context);
@@ -84,10 +85,11 @@ public class StickerEmojiCell extends FrameLayout {
             sticker = document;
             parentObject = parent;
             TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+            String filter = AndroidUtilities.isTablet() ? "50_50" : null;
             if (thumb != null) {
-                imageView.setImage(ImageLocation.getForDocument(thumb, document), null, "webp", null, parentObject);
+                imageView.setImage(ImageLocation.getForDocument(thumb, document), filter, "webp", null, parentObject);
             } else {
-                imageView.setImage(ImageLocation.getForDocument(document), null, "webp", null, parentObject);
+                imageView.setImage(ImageLocation.getForDocument(document), filter, "webp", null, parentObject);
             }
 
             if (emoji != null) {
@@ -141,8 +143,11 @@ public class StickerEmojiCell extends FrameLayout {
 
     @Override
     public void invalidate() {
-        emojiTextView.invalidate();
-        super.invalidate();
+        if (!passInvalidate) {
+            super.invalidate();
+            passInvalidate = true;
+            emojiTextView.invalidate();
+        } else passInvalidate = false;
     }
 
     @Override

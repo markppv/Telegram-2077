@@ -4232,6 +4232,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 inputStickerSet.access_hash = set.access_hash;
                 inputStickerSet.id = set.id;
                 StickersAlert alert = new StickersAlert(getParentActivity(), ChatActivity.this, inputStickerSet, null, chatActivityEnterView);
+                if (AndroidUtilities.isTablet()) alert.setForceDontShowEmoji(true);
                 alert.setClearsInputField(clearsInputField);
                 showDialog(alert);
             }
@@ -12793,7 +12794,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 break;
             }
             case 9: {
-                showDialog(new StickersAlert(getParentActivity(), this, selectedObject.getInputStickerSet(), null, bottomOverlayChat.getVisibility() != View.VISIBLE && (currentChat == null || ChatObject.canSendStickers(currentChat)) ? chatActivityEnterView : null));
+                final StickersAlert stickersAlert = new StickersAlert(getParentActivity(), this, selectedObject.getInputStickerSet(), null, bottomOverlayChat.getVisibility() != View.VISIBLE && (currentChat == null || ChatObject.canSendStickers(currentChat)) ? chatActivityEnterView : null);
+                if (AndroidUtilities.isTablet()) stickersAlert.setForceDontShowEmoji(true);
+                showDialog(stickersAlert);
                 break;
             }
             case 10: {
@@ -13958,7 +13961,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             SecretMediaViewer.getInstance().setParentActivity(getParentActivity());
                             SecretMediaViewer.getInstance().openMedia(message, photoViewerProvider);
                         } else if (message.type == 13) {
-                            showDialog(new StickersAlert(getParentActivity(), ChatActivity.this, message.getInputStickerSet(), null, bottomOverlayChat.getVisibility() != View.VISIBLE && (currentChat == null || ChatObject.canSendStickers(currentChat)) ? chatActivityEnterView : null));
+                            final StickersAlert stickersAlert = new StickersAlert(getParentActivity(), ChatActivity.this, message.getInputStickerSet(), null, bottomOverlayChat.getVisibility() != View.VISIBLE && (currentChat == null || ChatObject.canSendStickers(currentChat)) ? chatActivityEnterView : null);
+                            if (AndroidUtilities.isTablet()) stickersAlert.setForceDontShowEmoji(true);
+                            showDialog(stickersAlert);
                         } else if (message.isVideo() || message.type == 1 || message.type == 0 && !message.isWebpageDocument() || message.isGif()) {
                             if (message.isVideo()) {
                                 sendSecretMessageRead(message);
