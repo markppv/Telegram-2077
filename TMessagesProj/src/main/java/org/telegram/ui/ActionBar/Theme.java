@@ -29,7 +29,6 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.graphics.drawable.ShapeDrawable;
@@ -45,6 +44,8 @@ import android.os.SystemClock;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.StateSet;
+
+import androidx.core.util.Supplier;
 
 import com.airbnb.lottie.LottieCompositionFactory;
 import com.airbnb.lottie.LottieDrawable;
@@ -2338,7 +2339,11 @@ public class Theme {
     }
 
     public static Drawable createRoundRectDrawable(int rad, int defaultColor) {
-        ShapeDrawable defaultDrawable = new ShapeDrawable(new RoundRectShape(new float[]{rad, rad, rad, rad, rad, rad, rad, rad}, null, null));
+        return createRoundRectDrawable(new float[]{rad, rad, rad, rad, rad, rad, rad, rad}, defaultColor);
+    }
+
+    public static Drawable createRoundRectDrawable(float[] rads, int defaultColor) {
+        ShapeDrawable defaultDrawable = new ShapeDrawable(new RoundRectShape(rads, null, null));
         defaultDrawable.getPaint().setColor(defaultColor);
         return defaultDrawable;
     }
@@ -2360,14 +2365,22 @@ public class Theme {
     }
 
     public static Drawable getRoundRectSelectorDrawable(float cornerRadius, int color) {
+        return getRippleSelectorDrawable(color, () -> createRoundRectDrawable(
+                AndroidUtilities.dp(cornerRadius), 0xffffffff));
+    }
+
+    public static Drawable getRoundRectSelectorDrawable(float[] cornerRadius, int color) {
+        for (int i = 0; i < cornerRadius.length; i++) cornerRadius[i] = AndroidUtilities.dp(cornerRadius[i]);
+        return getRippleSelectorDrawable(color, () -> createRoundRectDrawable(cornerRadius, 0xffffffff));
+    }
+
+    public static Drawable getRippleSelectorDrawable(int color, Supplier<Drawable> getMaskDrawable) {
         if (Build.VERSION.SDK_INT >= 21) {
-            Drawable maskDrawable = createRoundRectDrawable(
-                    AndroidUtilities.dp(cornerRadius), 0xffffffff);
             ColorStateList colorStateList = new ColorStateList(
                     new int[][]{StateSet.WILD_CARD},
                     new int[]{(color & 0x00ffffff) | 0x19000000}
             );
-            return new RippleDrawable(colorStateList, null, maskDrawable);
+            return new RippleDrawable(colorStateList, null, getMaskDrawable.get());
         } else return createSelectorDrawable(color, 2);
     }
 

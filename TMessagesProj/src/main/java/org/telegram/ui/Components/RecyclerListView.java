@@ -34,17 +34,17 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.Theme;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 public class RecyclerListView extends RecyclerView {
 
@@ -80,6 +80,7 @@ public class RecyclerListView extends RecyclerView {
     private Drawable selectorDrawable;
     private int selectorPosition;
     private android.graphics.Rect selectorRect = new android.graphics.Rect();
+    private android.graphics.Rect selectorPaddings = new android.graphics.Rect();
     private boolean isChildViewEnabled;
 
     private boolean selfOnLayout;
@@ -928,11 +929,19 @@ public class RecyclerListView extends RecyclerView {
     }
 
     public void setSelectorDrawableColor(int color) {
+        setSelectorDrawable(Theme.getSelectorDrawable(color, false));
+    }
+
+    public void setSelectorDrawable(Drawable drawable) {
         if (selectorDrawable != null) {
             selectorDrawable.setCallback(null);
         }
-        selectorDrawable = Theme.getSelectorDrawable(color, false);
+        selectorDrawable = drawable;
         selectorDrawable.setCallback(this);
+    }
+
+    public void setSelectorPadding(int left, int top, int right, int bottom) {
+        selectorPaddings.set(left, top, right, bottom);
     }
 
     public void checkSection() {
@@ -1575,7 +1584,12 @@ public class RecyclerListView extends RecyclerView {
         }
 
         if (!selectorRect.isEmpty()) {
-            selectorDrawable.setBounds(selectorRect);
+            selectorDrawable.setBounds(
+                    selectorRect.left + selectorPaddings.left,
+                    selectorRect.top + selectorPaddings.top,
+                    selectorRect.right - selectorPaddings.right,
+                    selectorRect.bottom - selectorPaddings.bottom
+            );
             selectorDrawable.draw(canvas);
         }
     }
