@@ -1652,10 +1652,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     delegate.videoTimerReached();
                 }
             }
-            int minutes = duration / 60;
-            int seconds = duration - minutes * 60;
             if (lastTime != duration) {
-                String str = String.format("%d:%02d", minutes, seconds);
+                String str = AndroidUtilities.formatDuration(duration);
                 infoWidth = (int) Math.ceil(Theme.chat_infoPaint.measureText(str));
                 infoLayout = new StaticLayout(str, Theme.chat_infoPaint, infoWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                 lastTime = duration;
@@ -1675,7 +1673,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (lastTime != duration) {
                 lastTime = duration;
-                String timeString = String.format("%02d:%02d", duration / 60, duration % 60);
+                String timeString = AndroidUtilities.formatDuration(duration, true);
                 timeWidthAudio = (int) Math.ceil(Theme.chat_timePaint.measureText(timeString));
                 durationLayout = new StaticLayout(timeString, Theme.chat_timePaint, timeWidthAudio, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                 invalidate();
@@ -1708,7 +1706,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                 if (lastTime != duration) {
                     lastTime = duration;
-                    String timeString = String.format("%02d:%02d", duration / 60, duration % 60);
+                    String timeString = AndroidUtilities.formatDuration(duration, true);
                     timeWidthAudio = (int) Math.ceil(Theme.chat_audioTimePaint.measureText(timeString));
                     durationLayout = new StaticLayout(timeString, Theme.chat_audioTimePaint, timeWidthAudio, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                 }
@@ -1722,9 +1720,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     lastTime = currentProgress;
                     String timeString;
                     if (duration == 0) {
-                        timeString = String.format("%d:%02d / -:--", currentProgress / 60, currentProgress % 60);
+                        timeString = AndroidUtilities.formatDuration(currentProgress) + " / -:--";
                     } else {
-                        timeString = String.format("%d:%02d / %d:%02d", currentProgress / 60, currentProgress % 60, duration / 60, duration % 60);
+                        timeString = AndroidUtilities.formatDuration(currentProgress) + " / " + AndroidUtilities.formatDuration(duration);
                     }
                     int timeWidth = (int) Math.ceil(Theme.chat_audioTimePaint.measureText(timeString));
                     durationLayout = new StaticLayout(timeString, Theme.chat_audioTimePaint, timeWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
@@ -3005,9 +3003,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             drawPhotoImage = true;
 
                             if (type != null && type.equals("video") && duration != 0) {
-                                int minutes = duration / 60;
-                                int seconds = duration - minutes * 60;
-                                String str = String.format("%d:%02d", minutes, seconds);
+                                String str = AndroidUtilities.formatDuration(duration);
                                 durationWidth = (int) Math.ceil(Theme.chat_durationPaint.measureText(str));
                                 videoInfoLayout = new StaticLayout(str, Theme.chat_durationPaint, durationWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                             } else if (hasGamePreview) {

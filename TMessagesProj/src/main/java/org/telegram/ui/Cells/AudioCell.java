@@ -167,7 +167,7 @@ public class AudioCell extends FrameLayout {
         titleTextView.setText(audioEntry.title);
         genreTextView.setText(audioEntry.genre);
         authorTextView.setText(audioEntry.author);
-        timeTextView.setText(String.format("%d:%02d", audioEntry.duration / 60, audioEntry.duration % 60));
+        timeTextView.setText(AndroidUtilities.formatDuration(audioEntry.duration));
         setPlayDrawable(MediaController.getInstance().isPlayingMessage(audioEntry.messageObject) && !MediaController.getInstance().isMessagePaused());
 
         needDivider = divider;

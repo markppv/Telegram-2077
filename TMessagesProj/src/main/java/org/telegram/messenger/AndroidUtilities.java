@@ -1935,6 +1935,18 @@ public class AndroidUtilities {
         return null;
     }
 
+    public static String formatDuration(long durationMs) {
+        return formatDuration(durationMs, false);
+    }
+
+    public static String formatDuration(long durationMs, boolean withLeadingZero) {
+        long seconds = durationMs % 60;
+        long minutes = (durationMs / 60) % 60;
+        long hours = durationMs / 3600;
+        return hours > 0 ? String.format("%" + (withLeadingZero ? "02" : "") + "d:%02d:%02d", hours, minutes, seconds)
+                : String.format("%" + (withLeadingZero ? "02" : "") + "d:%02d", minutes, seconds);
+    }
+
     public static String formatFileSize(long size) {
         return formatFileSize(size, false);
     }

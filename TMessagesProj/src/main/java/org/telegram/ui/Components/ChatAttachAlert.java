@@ -1088,7 +1088,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         return;
                     }
                     videoRecordTime++;
-                    recordTime.setText(String.format("%02d:%02d", videoRecordTime / 60, videoRecordTime % 60));
+                    recordTime.setText(AndroidUtilities.formatDuration(videoRecordTime, true));
                     AndroidUtilities.runOnUIThread(videoRecordRunnable, 1000);
                 };
                 AndroidUtilities.lockOrientation(parentFragment.getParentActivity());
