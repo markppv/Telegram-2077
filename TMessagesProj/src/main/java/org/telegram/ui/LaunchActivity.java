@@ -17,6 +17,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.Outline;
 import android.graphics.Point;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
@@ -33,6 +35,7 @@ import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
@@ -355,7 +358,19 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             layersActionBarLayout.setRemoveActionBarExtraHeight(true);
             layersActionBarLayout.setBackgroundView(shadowTablet);
             layersActionBarLayout.setUseAlphaAnimations(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                layersActionBarLayout.setOutlineProvider(new ViewOutlineProvider() {
+                    @Override
+                    public void getOutline(View view, Outline outline) {
+                        outline.setRoundRect(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight(),
+                                AndroidUtilities.dp(16));
+                    }
+                });
+                layersActionBarLayout.setClipToOutline(true);
+                layersActionBarLayout.setElevation(AndroidUtilities.dp(4));
+            } else {
             layersActionBarLayout.setBackgroundResource(R.drawable.boxshadow);
+            }
             layersActionBarLayout.init(layerFragmentsStack);
             layersActionBarLayout.setDelegate(this);
             layersActionBarLayout.setDrawerLayoutContainer(drawerLayoutContainer);
