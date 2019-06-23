@@ -2059,7 +2059,9 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             args.putInt("message_id", messageId);
             BaseFragment lastFragment = !mainFragmentsStack.isEmpty() ? mainFragmentsStack.get(mainFragmentsStack.size() - 1) : null;
             if (lastFragment == null || MessagesController.getInstance(intentAccount).checkCanOpenChat(args, lastFragment)) {
-                AndroidUtilities.runOnUIThread(() -> {
+                if (lastFragment instanceof ChatActivity && ((ChatActivity) lastFragment).getDialogId() == -channelId) {
+                    ((ChatActivity) lastFragment).scrollToMessageId(messageId, 0, true, 0, false);
+                } else AndroidUtilities.runOnUIThread(() -> {
                     if (!actionBarLayout.presentFragment(new ChatActivity(args))) {
                         TLRPC.TL_channels_getChannels req = new TLRPC.TL_channels_getChannels();
                         TLRPC.TL_inputChannel inputChannel = new TLRPC.TL_inputChannel();
