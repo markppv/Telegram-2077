@@ -475,6 +475,10 @@ public class ActionBarMenuItem extends FrameLayout {
         }
     }
 
+    public boolean isSearchExpanded() {
+        return searchContainer.getVisibility() == VISIBLE;
+    }
+
     public void closeSubMenu() {
         if (popupWindow != null && popupWindow.isShowing()) {
             popupWindow.dismiss();
