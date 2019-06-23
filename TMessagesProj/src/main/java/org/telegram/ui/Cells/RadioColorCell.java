@@ -29,6 +29,8 @@ public class RadioColorCell extends FrameLayout {
     public RadioColorCell(Context context) {
         super(context);
 
+        setBackground(Theme.getSelectorDrawable(false));
+
         radioButton = new RadioButton(context);
         radioButton.setSize(AndroidUtilities.dp(20));
         radioButton.setColor(Theme.getColor(Theme.key_dialogRadioBackground), Theme.getColor(Theme.key_dialogRadioBackgroundChecked));
