@@ -882,8 +882,8 @@ public class InviteContactsActivity extends BaseFragment implements Notification
         public void notifyDataSetChanged() {
             super.notifyDataSetChanged();
             int count = getItemCount();
-            emptyView.setVisibility(count == 1 ? View.VISIBLE : View.INVISIBLE);
-            decoration.setSingle(count == 1);
+            emptyView.setVisibility(count == 0 ? View.VISIBLE : View.INVISIBLE);
+            decoration.setSingle(count == 0);
         }
     }
 
