@@ -131,8 +131,10 @@ public class Emoji {
                 BitmapFactory.Options opts = new BitmapFactory.Options();
                 opts.inJustDecodeBounds = false;
                 opts.inSampleSize = imageResize;
-                if (Build.VERSION.SDK_INT >= 26) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     opts.inPreferredConfig = Bitmap.Config.HARDWARE;
+                } else if (AndroidUtilities.isTablet()) {
+                    opts.inPreferredConfig = Bitmap.Config.RGB_565;
                 }
                 bitmap = BitmapFactory.decodeStream(is, null, opts);
                 is.close();
