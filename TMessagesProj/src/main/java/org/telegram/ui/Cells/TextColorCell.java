@@ -13,14 +13,17 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import androidx.annotation.Keep;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Keep;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 
@@ -29,6 +32,7 @@ import java.util.ArrayList;
 public class TextColorCell extends FrameLayout {
 
     private TextView textView;
+    private TextView valueTextView;
     private boolean needDivider;
     private int currentColor;
     private float alpha = 1.0f;
@@ -53,6 +57,17 @@ public class TextColorCell extends FrameLayout {
         textView.setSingleLine(true);
         textView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
         addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 21, 0, 21, 0));
+
+        valueTextView = new TextView(context);
+        valueTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        valueTextView.setLines(1);
+        valueTextView.setMaxLines(1);
+        valueTextView.setSingleLine(true);
+        valueTextView.setEllipsize(TextUtils.TruncateAt.END);
+        valueTextView.setText(LocaleController.getString("LedDisabled", R.string.LedDisabled));
+        valueTextView.setGravity((LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL);
+        valueTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteValueText));
+        addView(valueTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, 21, 0, 21, 0));
     }
 
     @Keep
@@ -76,6 +91,7 @@ public class TextColorCell extends FrameLayout {
         textView.setText(text);
         needDivider = divider;
         currentColor = color;
+        valueTextView.setVisibility(currentColor == 0 ? VISIBLE : GONE);
         setWillNotDraw(!needDivider && currentColor == 0);
         invalidate();
     }
