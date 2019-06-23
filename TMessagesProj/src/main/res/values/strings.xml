@@ -2059,6 +2059,7 @@
     <!--edit video view-->
     <string name="SendingVideo">Sending video...</string>
     <string name="SendingGif">Sending GIF...</string>
+    <string name="SendAsGif">Send as GIF</string>
     <!--bot-->
     <string name="Bot">bot</string>
     <string name="BotShare">Share</string>
